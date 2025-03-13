@@ -8,11 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Compcateg extends Model
 {
     use HasFactory;
-    protected $primaryKey = 'coca_id';
+    protected $primaryKey = ['competition', 'category'];
 
     protected $fillable = [
-        'competition',
-        'category',
         'min_entry',
         'max_entry'
     ];

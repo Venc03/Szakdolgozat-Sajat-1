@@ -10,12 +10,9 @@ class Compeet extends Model
     /** @use HasFactory<\Database\Factories\CompeetFactory> */
     use HasFactory;
 
-    protected $primaryKey = 'cs_id';
+    protected $primaryKey = ['competition', 'competitor', 'car'];
 
     protected $fillable = [
-        'competition',
-        'competitor',
-        'car',
         'arrives_at',
         'start_time',
         'finish_time',

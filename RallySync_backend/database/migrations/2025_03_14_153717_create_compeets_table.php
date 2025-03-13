@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\Competitor;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -13,11 +14,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('compeets', function (Blueprint $table) {
-            $table->id('cs_id');
-            $table->unsignedBigInteger('competitor');
-            $table->foreignId('competition')->references('comp_id')->on('competitions');
-            $table->foreign('competitor')->references('id')->on('users');
-            $table->foreignId('car')->references('cid')->on('cars');
+            $table->foreignId('competitor')->constrained('enlistments', 'competitor')->onDelete('cascade');
+            $table->foreignId('competition')->constrained('enlistments', 'competition')->onDelete('cascade');
+            $table->foreignId('car')->constrained('cars', 'cid')->onDelete('cascade');
             $table->dateTime('arrives_at');
             $table->dateTime('start_date');
             $table->dateTime('finish_date');
