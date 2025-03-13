@@ -28,13 +28,15 @@ function NavigacioVendeg() {
                         </Offcanvas.Header>
                         <Offcanvas.Body>
                             <Nav className="justify-content-end flex-grow-1 pe-3">
-                                <Nav.Link as={Link} to="/" className="text-black">Kezdőlap</Nav.Link>
-                                <Nav.Link as={Link} to="/versenyek" className="text-black">Versenyek</Nav.Link>
-                                <Nav.Link as={Link} to="/galeria" className="text-black">Galéria</Nav.Link>
-                                <Nav.Link as={Link} to="/" className="text-black">HELYKITÖLTŐ</Nav.Link>
-                                <Nav.Link as={Link} to="/kapcsolat" className="text-black">Kapcsolat</Nav.Link>
-                                <Nav.Link as={Link} to="/bejelentkezes" className="text-black">Bejelentkezés</Nav.Link>
-                                <Nav.Link as={Link} to="/regisztracio" className="text-black">Regisztráció</Nav.Link>
+                            <Nav.Link as={Link} to="/versenyek" className="text-white">Versenyek</Nav.Link>
+                        <Nav.Link as={Link} to="/galeria" className="text-white">Galéria</Nav.Link>
+                        <Nav.Link as={Link} to="/" className="text-white">HELYKITÖLTŐ</Nav.Link>
+                        <Navbar.Brand href="/" className="mx-3 d-flex justify-content-center">
+                            <img src={logo} alt="Logo" width="50" height="50" />
+                        </Navbar.Brand>
+                        <Nav.Link as={Link} to="/kapcsolat" className="text-white">Kapcsolat</Nav.Link>
+                        <Nav.Link as={Link} to="/bejelentkezes" className="text-white">Bejelentkezés</Nav.Link>
+                        <Nav.Link as={Link} to="/regisztracio" className="text-white">Regisztráció</Nav.Link>
                             </Nav>
                         </Offcanvas.Body>
                     </Navbar.Offcanvas>

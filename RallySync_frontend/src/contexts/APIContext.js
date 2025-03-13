@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { AuthContext } from './AuthContext';
-import { myAxios } from '../api/axios';
+import { myAxios } from '../api/myAxios';
 
 export const APIContext = createContext(null);
 
@@ -22,9 +22,9 @@ export const APIProvider = ({ children }) => {
 
     const getHelyszin = async () => {
         try {
-            const response = await myAxios.get("/api/places");
-            console.log("Helyszínek: ", response.data)
-            setHL(response.data)
+            const { data } = await myAxios.get(`/api/placeGet`);
+            console.log("Helyszínek: ", data)
+            setHL(data)
         } catch (error) {
             console.error("Hiba:", error);
         }
@@ -53,6 +53,6 @@ export const APIProvider = ({ children }) => {
         getHelyszin();
         getKategoriak();
     }, [])
-    return (<APIContext.Provider value={{ sajatVersenyLista, helyszinLista, categoryLista, postCompetition }}>{children}</APIContext.Provider>)
+    return (<APIContext.Provider value={{ sajatVersenyLista, helyszinLista, categoryLista, postCompetition, getHelyszin}}>{children}</APIContext.Provider>)
 }
 export default APIContext

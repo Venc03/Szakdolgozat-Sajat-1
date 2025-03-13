@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react'
 import useAuthContext, { AuthContext } from './AuthContext';
-import { myAxios } from '../api/axios';
+import { myAxios } from '../api/myAxios';
 import APIContext from './APIContext';
 
 export const SzervezoContext = createContext(null);

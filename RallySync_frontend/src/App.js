@@ -14,6 +14,11 @@ import Versenyek from "./pages/Vendeg/Versenyek";
 import SzVersenyek from "./pages/Szervezo/SzVersenyek";
 import Szervezes from "./pages/Szervezo/Szervezes";
 import Profil from "./pages/Profil";
+import AKezdolap from "./pages/Admin/AKezdolap";
+import RaceCars from "./pages/Admin/RaceCars";
+import Categories from "./pages/Admin/Categories";
+import Competitions from "./pages/Admin/Competitions";
+import Places from "./pages/Admin/Places";
 
 
 function AppRoutes() {
@@ -21,7 +26,7 @@ function AppRoutes() {
 
     return (
         <Routes>
-            {/* Vendég layout */}
+            {/* VENDEG */}
             {!user && (
                 <Route path="/" element={<VendegLayout />}>
                     <Route index element={<Kezdolap />} />
@@ -32,33 +37,39 @@ function AppRoutes() {
                     <Route path="regisztracio" element={<Regisztracio />} />
                 </Route>
             )}
-            {/* {user && user.permission === 1 ? (
-                <Route path="/" element={<VersenyzoLayout />}>
-                    <Route index element={<Kezdolap />} />
-                    <Route path="versenyeim" element={<Versenyeim />} />
-                    <Route path="regisztracio" element={<Regisztracio />} />
-                </Route>
-            ) : ""} */}
 
-            {user && user.permission === 2 ? (
-                <Route path="/" element={<SzervezoLayout />}>
-                    <Route index element={<Kezdolap />} />
-                    <Route path="versenyeim" element={<SzVersenyek />} />
-                    <Route path="szervezes" element={<Szervezes />} />
-                    <Route path="Profil" element={<Profil />} />
+            {/* VERSENYZO */}
+            {user && user.permission === 1 && (
+                <Route path="/" element={<VersenyzoLayout />}>
                 </Route>
-            ) : ""}
-            {/* Admin és User ugyanazon útvonalon */}
-            {user && (
-                <Route path="/" element={
-                    user.permission === 1 ?
-                        (<VersenyzoLayout />)
-                        : user.permission === 2 ? (
-                            <SzervezoLayout />)
-                            : user.permission === 3 ? (
-                                <AdminLayout />)
-                                : <VersenyzoLayout />}>
+            )}
+
+            {/* SZERVEZO */}
+            {user && user.permission === 2 && (
+                <Route path="/" element={<SzervezoLayout />}>
+                </Route>
+            )}
+
+            {/* ADMIN */}
+            {user && user.permission === 3 && (
+                <Route path="/" element={<AdminLayout />}>
+                    <Route index element={<AKezdolap />} />
+                    <Route path="profil" element={<Profil />} />
+                    <Route path="versenyautok" element={<RaceCars />} />
+                    <Route path="kategoriak" element={<Categories />} />
+                    <Route path="versenyek" element={<Competitions />} />
+                    <Route path="helyszinek" element={<Places />} />
+                </Route>
+            )}
+
+            {/* BEJELENTKEZVE PERMISSION NELKUL */}
+            {user && !user.permission && (
+                <Route path="/" element={<VendegLayout />}>
                     <Route index element={<Kezdolap />} />
+                    <Route path="versenyek" element={<Versenyek />} />
+                    <Route path="galeria" element={<Galeria />} />
+                    <Route path="kapcsolat" element={<Kapcsolat />} />
+                    <Route path="profil" element={<Profil />} />
                 </Route>
             )}
         </Routes>

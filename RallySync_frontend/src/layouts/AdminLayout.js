@@ -4,7 +4,7 @@ import { Outlet } from 'react-router';
 
 function AdminLayout() {
     return (
-        <div className="szervezo">
+        <div>
             <NavigacioAdmin />
             <Outlet />
         </div>
