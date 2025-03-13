@@ -120,6 +120,15 @@ class CompetitionController extends Controller
     ');
     }
 
+    public function registeredRaces()
+    {
+        return DB::select('
+        SELECT event_name, start_date, organiser
+        FROM competitions
+        WHERE GETDATE() < start_date
+    ');
+    }
+
     //szervező-e a felhasználó
     public function isOrganiser(string $id)
     {

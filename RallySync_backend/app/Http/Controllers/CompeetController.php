@@ -10,6 +10,17 @@ use Illuminate\Support\Facades\DB;
 
 class CompeetController extends Controller
 {
+
+    public function tookPart() {
+       return DB::select('
+       SELECT c.event_name, u.name
+       FROM compeets cp
+       JOIN competitions c ON cp.competition = c.comp_id
+       JOIN users u ON cp.competitor = u.id
+       ORDER BY c.event_name
+       '); 
+    }
+
     public function legtobbetHasznaltMarka()
     {
         return DB::select('

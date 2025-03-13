@@ -23,7 +23,7 @@ class CompCategFactory extends Factory
             'competition' => rand(1, Competition::count()),
             'category' => rand(1, Category::count()),
             'min_entry' => rand(1, $min_entry_max),
-            'max_entry' => date($min_entry_max, 100),
+            'max_entry' => rand($min_entry_max, 100),
         ];
     }
 }

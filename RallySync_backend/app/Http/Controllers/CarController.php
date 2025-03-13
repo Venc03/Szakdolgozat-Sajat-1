@@ -9,6 +9,15 @@ use Illuminate\Support\Facades\Validator;
 
 class CarController extends Controller
 {
+
+    public function carsAccordingToCategory(){
+        return DB::select('
+            SELECT cs.category, cs.brandtype
+            FROM cars cs
+            ORDER BY cs.category
+        ');
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -12,6 +12,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Middleware\Admin;
 use App\Http\Middleware\Competitor;
 use App\Http\Middleware\Organiser;
+use App\Models\Category;
+use App\Models\Place;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,33 +22,29 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 Route::middleware(['auth:sanctum', Admin::class])->group(function () {
-    route::get("/competitions", [CompetitionController::class, "index"]);
-    route::get("/competition/{id}", [CompetitionController::class, "show"]);
-    route::get("/compcategs", [CompcategController::class, "index"]);
-    route::get("/compcateg/{id}", [CompcategController::class, "show"]);
-
-    Route::post('/carUpload', [CarController::class, 'store']);
-    Route::post('/placeUpload', [PlaceController::class, 'store']);
-    Route::post('/categoryUpload', [CategoryController::class, 'store']);
-
-
-    Route::delete('/placeDel/{id}', [PlaceController::class, 'destroy']);
-    Route::delete('/carDel/{id}', [CarController::class, 'destroy']);
-    Route::delete('/categoryDel/{id}', [CategoryController::class, 'destroy']);
-
-    Route::patch('/carUpdate/{id}', [CarController::class, 'update']);
-    Route::patch('/competitionUpdate/{id}', [CompetitionController::class, 'update']);
-    Route::patch('/compcategUpdate/{id}', [CompcategController::class, 'update']);
+    Route::post('/carCreate', [CarController::class, 'store']);
+    Route::put('/carModify/{id}', [CarController::class, 'update']);
+    Route::delete('/carDelete/{id}', [CarController::class, 'destroy']);
+    Route::get('/categCreate', [CategoryController::class, 'store']);
+    Route::put('/categModify/{id}', [CategoryController::class, 'update']);
+    Route::delete('/categDelete/{id}', [CategoryController::class, 'destroy']);
+    Route::get('/placeCreate', [PlaceController::class, 'store']);
+    Route::put('/placeModify/{id}', [PlaceController::class, 'update']);
+    Route::delete('/placeDelete/{id}', [PlaceController::class, 'destroy']);
+    Route::get('/registeredRaces', [CompetitionController::class, 'registeredRaces']);
+    Route::get('/tookPart', [CompeetController::class, 'tookPart']);
+    Route::get('/carsAccordingToCategory', [CarController::class, 'carsAccordingToCategory']);
 });
 
 Route::middleware(['auth:sanctum', Organiser::class])->group(function () {
-    Route::get('/my-competition', [CompetitionController::class, 'myCompetitions']);
-    route::get("/places", [PlaceController::class, "index"]);
-    route::get("/categories", [CategoryController::class, "index"]);
-    route::get("/versenyFelvisz", [CategoryController::class, "index"]);
-    route::post("/competition", [CompetitionController::class, "store"]);
+
 });
-Route::middleware(['auth:sanctum', Competitor::class])->group(function () {});
+
+Route::middleware(['auth:sanctum', Competitor::class])->group(function () {
+
+});
+
+//public
 
 Route::get('/users', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
