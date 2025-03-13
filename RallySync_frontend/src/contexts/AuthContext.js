@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { myAxios } from "../api/axios";
+import { myAxios } from "../api/myAxios";
 import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext("");
@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
             console.error("Error fetching user:", error);
         }
     };
+    
 
     const logout = async () => {
         await csrf();
