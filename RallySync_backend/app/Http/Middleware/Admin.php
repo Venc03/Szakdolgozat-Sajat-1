@@ -16,7 +16,7 @@ class Admin
      */
     public function handle(Request $request, Closure $next)
     {
-        if (!Auth::check() || !(Auth::user()->permission == 2)) {
+        if (!Auth::check() || !(Auth::user()->permission == 3)) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
         return $next($request);
