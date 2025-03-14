@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { AuthContext } from './AuthContext';
-import { myAxios } from '../api/myAxios';
+import { getCsrfToken, myAxios } from '../api/myAxios';
 
 export const APIContext = createContext(null);
 
@@ -12,6 +12,7 @@ export const APIProvider = ({ children }) => {
 
     const getMyCompetitions = async () => {
         try {
+            await getCsrfToken();
             const response = await myAxios.get(`/api/competition/${user}`);
             console.log(response.data)
             setSVL(response.data)
@@ -22,17 +23,19 @@ export const APIProvider = ({ children }) => {
 
     const getHelyszin = async () => {
         try {
-            const { data } = await myAxios.get(`/api/placeGet`);
-            console.log("Helyszínek: ", data)
-            setHL(data)
+            await getCsrfToken();
+            const response = await myAxios.get("/api/placeGet");
+            console.log(response.data)
+            setHL(response.data)
         } catch (error) {
             console.error("Hiba:", error);
         }
-    };
+      };
 
     const postCompetition = async (data) => {
         try {
-            const response = await myAxios.post("api/competition", data); // POST kérést küldünk
+            await getCsrfToken();
+            const response = await myAxios.post("/api/competitions", data); 
             console.log("Sikeres feltöltés:", response.data);
         } catch (error) {
             console.error("Hiba:", error);
@@ -41,7 +44,8 @@ export const APIProvider = ({ children }) => {
 
     const getKategoriak = async () => {
         try {
-            const response = await myAxios.get("api/categories");
+            await getCsrfToken();
+            const response = await myAxios.get("/api/categGet");
             console.log(response.data)
             setKL(response.data)
         } catch (error) {

@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Button, InputGroup, FormControl } from "react-bootstrap";
-import { myAxios } from '../../api/myAxios'; // Assuming this axios instance is correctly set up
+import { getCsrfToken, myAxios } from '../../api/myAxios'; // Assuming this axios instance is correctly set up
 import APIContext from '../../contexts/APIContext'; // Path to your APIContext
 
 export default function Places() {
@@ -11,34 +11,59 @@ export default function Places() {
     useEffect(() => {
         getHelyszin(); 
     }, [getHelyszin]); // Add getHelyszin to dependency array
-
-    // Function to handle deleting a place
-    const handleDelete = async (id) => {
-        try {
-            await myAxios.delete(`/placeDelete/${id}`); // Send DELETE request to the API
-            getHelyszin(); // Refresh places list after deletion
-        } catch (error) {
-            console.error("Error deleting the place:", error);
-        }
-    };
-
-    // Function to handle adding a new place
+    const [loading, setLoading] = useState(false); // Add loading state
+    const [error, setError] = useState(""); // Add error state
+    
     const handleAdd = async () => {
-        const newPlace = { name: placeName }; // Create an object with the new place data
-
+        if (!placeName.trim()) {
+            setError("Place name is required.");
+            return;
+        }
+    
+        const newPlace = { place: placeName.trim() }; 
+        setLoading(true);
+        setError("");
+    
         try {
-            const response = await myAxios.post('/api/placeCreate', newPlace); // Assuming your backend is expecting this
-            getHelyszin(); // Refresh places list after successful addition
-            setPlaceName(""); // Clear the input field after successful addition
+            await getCsrfToken();
+            await myAxios.post('/api/placeCreate', newPlace);  
+            getHelyszin();  
+            setPlaceName("");  
         } catch (error) {
             console.error("Error adding the place:", error);
+            if (error.response) {
+                console.error('Response error:', error.response.data);  
+                setError(error.response.data.message || "There was an error adding the place.");
+            } else {
+                setError("There was an error adding the place.");
+            }
+        } finally {
+            setLoading(false); 
+        }
+    };
+    
+    const handleDelete = async (id) => {
+        if (window.confirm("Are you sure you want to delete this place?")) {
+            setLoading(true);
+            setError("");
+    
+            try {
+                await getCsrfToken();
+                console.log(id);
+                await myAxios.delete(`/api/placeDelete/${id}`);
+                getHelyszin();
+            } catch (error) {
+                console.error("Error deleting the place:", error);
+                setError("There was an error deleting the place.");
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
     return (
         <div className="container mt-5">
-            <div className="d-flex justify-content-between align-items-center"
-                 style={{ gridTemplateColumns: "4fr 1fr 1fr" }}>
+            <div className="container">
                 <h1>Pályák</h1>
                 {/* Input field to add place */}
                 <InputGroup className="mb-3" style={{ width: '300px' }}>
@@ -54,18 +79,13 @@ export default function Places() {
             <div className="row mt-3">
                 {/* If places exist, display them */}
                 {helyszinLista.length > 0 ? (
-                    helyszinLista.map((helyszin) => (
-                        <div className="col-md-4 mb-3" key={helyszin.id}>
+                    helyszinLista.map((helyszin, index) => (
+                        <div className="col-md-4 mb-3" key={helyszin.id || index}> 
                             <div className="card">
                                 <div className="card-header">
-                                    {helyszin.name} {/* Display place name */}
+                                    {helyszin.place}
                                 </div>
-                                <ul className="list-group list-group-flush">
-                                    <li className="list-group-item">{helyszin.address}</li> {/* Address */}
-                                    <li className="list-group-item">{helyszin.description}</li> {/* Description */}
-                                </ul>
-                                {/* Button to delete the place */}
-                                <Button variant="danger" onClick={() => handleDelete(helyszin.id)}>
+                                <Button variant="danger" onClick={() => handleDelete(helyszin.plac_id)}>
                                     Törlés
                                 </Button>
                             </div>
