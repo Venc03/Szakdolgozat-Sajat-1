@@ -33,7 +33,7 @@ function NavigacioAdmin() {
                                 <Nav.Link as={Link} to="/kategoriak" className="text-white">Kategóriák</Nav.Link>
                                 <Nav.Link as={Link} to="/helyszinek" className="text-white">Helyszínek</Nav.Link>
                                 <Nav.Link as={Link} to="/versenyek" className="text-white">Versenyek</Nav.Link>
-                                <Nav.Link as={Link} to="/profil" className="text-white">Profil</Nav.Link>
+                                <Nav.Link as={Link} to="/profil" className="text-white">Profil(s)</Nav.Link>
                                 <Button
                                     className="logout-btn text-nowrap"
                                     onClick={logout}
@@ -60,7 +60,7 @@ function NavigacioAdmin() {
                             <img src={logo2} alt="Logo" width="50" height="50" />
                         </Navbar.Brand>
                         <Nav.Link as={Link} to="/versenyek" className="text-white">Versenyek</Nav.Link>
-                        <Nav.Link as={Link} to="/profil" className="text-white">Profil</Nav.Link>
+                        <Nav.Link as={Link} to="/profil" className="text-white">Profil(s)</Nav.Link>
                         <Button
                             className="logout-btn text-nowrap"
                             onClick={logout}
