@@ -10,6 +10,7 @@ class Car extends Model
 
     use HasFactory;
     protected $primaryKey = 'cid';
+    public $incrementing = true;
 
     protected $fillable = [
         'brandtype',

@@ -30,10 +30,7 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
     route::get("/compcateg/{id}", [CompcategController::class, "show"]);
     Route::patch('/competitionUpdate/{id}', [CompetitionController::class, 'update']);
     Route::patch('/compcategUpdate/{id}', [CompcategController::class, 'update']);
-    Route::get('/carGet', [CarController::class, 'index']);
-    Route::post('/carCreate', [CarController::class, 'store']);
-    Route::patch('/carModify/{id}', [CarController::class, 'update']);
-    Route::delete('/carDelete/{id}', [CarController::class, 'destroy']);
+    
     Route::get('/categGet', [CategoryController::class, 'index']);
     Route::post('/categCreate', [CategoryController::class, 'store']);
     Route::patch('/categModify/{id}', [CategoryController::class, 'update']);
@@ -41,7 +38,7 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
     Route::get('/placeGet', [PlaceController::class, 'index']);
     Route::post('/placeCreate', [PlaceController::class, 'store']);
     Route::patch('/placeModify/{id}', [PlaceController::class, 'update']);
-
+    Route::delete('/placeDelete/{id}', [PlaceController::class, 'destroy']);
     Route::get('/registeredRaces', [CompetitionController::class, 'registeredRaces']);
     Route::get('/tookPart', [CompeetController::class, 'tookPart']);
     Route::get('/carsAccordingToCategory', [CarController::class, 'carsAccordingToCategory']);
@@ -66,5 +63,7 @@ Route::patch('/users/{id}/update-password', [UserController::class, 'updatePassw
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
-Route::delete('/placeDelete/{id}', [PlaceController::class, 'destroy']);
-Route::get('/placeGetOne/{id}', [PlaceController::class, 'show']);
+    Route::get('/carGet', [CarController::class, 'index']);
+    Route::post('/carCreate', [CarController::class, 'store']);
+    Route::patch('/carModify/{id}', [CarController::class, 'update']);
+    Route::delete('/carDelete/{id}', [CarController::class, 'destroy']);
