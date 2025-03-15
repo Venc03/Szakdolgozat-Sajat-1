@@ -101,7 +101,7 @@ export default function Status() {
                         <div className="col-md-4 mb-3" key={status.stat_id || index}>
                             <div className="card">
                                 <div className="card-header">
-                                    {status.stat_id}
+                                    ID: {status.stat_id}
                                 </div>
                                 <div className="card-body">
                                     <p><strong>Status: </strong> {status.statsus}</p>

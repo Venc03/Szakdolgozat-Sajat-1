@@ -18,28 +18,36 @@ class CompetitionController extends Controller
      */
     public function index()
     {
-        return Competition::all();
+        return DB::select('
+        SELECT c.comp_id, c.event_name, p.place, o.name as organiser, 
+        c.description, cc.min_entry, cc.max_entry, ctg.category, cc.competition, c.start_date, c.end_date
+        FROM competitions c
+        INNER JOIN users o ON c.organiser = o.id
+        INNER JOIN places p ON c.place = p.plac_id
+        INNER JOIN compcategs cc ON c.comp_id = cc.competition
+        INNER JOIN categories ctg ON cc.category = ctg.categ_id
+    ');
     }
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        //létrejön a competition!!!!
-        $competition = new Competition();
-        $competition->fill($request->all());
-        //elmenti a versenyt!
-        $competition->save();
-        //létrejön egy új compcateg
-        foreach ($request["category"] as $category) {
-            $cc = new Compcateg();
-            $cc->fill($request->all());
-            $cc->competition = $competition->comp_id;
-            $cc->category = $category;
-            $cc->save();
-        }
+{
+    $competition = new Competition();
+    $competition->fill($request->all());
+    $competition->save();
+
+    // Create compcateg entries
+    foreach ($request["category"] as $category) {
+        $cc = new Compcateg();
+        $cc->competition = $competition->comp_id;
+        $cc->category = $category;
+        $cc->save();
     }
+
+    return response()->json(['message' => 'Competition created successfully']);
+}
 
     /**
      * Display the specified resource.
@@ -59,48 +67,18 @@ class CompetitionController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        // Validate input to ensure correct data
-        $validator = Validator::make($request->all(), [
-            'event_name'   => 'nullable|string|max:255',
-            'place'        => 'nullable|integer|exists:places,plac_id',
-            'organiser'    => 'nullable|integer|exists:users,id',
-            'description'  => 'nullable|string|max:255',
-            'start_date'   => 'nullable|date',
-            'end_date'     => 'nullable|date|after_or_equal:start_date',
-        ]);
+{
+    $competition = Competition::findOrFail($id);
+    $competition->update($request->only(['event_name', 'place', 'organiser', 'description', 'start_date', 'end_date']));
 
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 422);
-        }
+    return response()->json(['message' => 'Competition updated successfully']);
+}
 
-        // Get only provided fields and keep valid values (including 0)
-        $updateData = array_filter(
-            $request->only(['event_name', 'place', 'organiser', 'description', 'start_date', 'end_date']),
-            fn($value) => $value !== null
-        );
-
-        if (empty($updateData)) {
-            return response()->json(['message' => 'No data provided for update'], 400);
-        }
-
-        // Update the record in DB
-        $updated = DB::table('competitions')->where('comp_id', $id)->update($updateData);
-
-        if ($updated) {
-            return response()->json(['message' => 'Competition updated successfully']);
-        } else {
-            return response()->json(['message' => 'Competition not found or no changes made'], 404);
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        Competition::find($id)->delete();
-    }
+public function destroy(string $id)
+{
+    Competition::findOrFail($id)->delete();
+    return response()->json(['message' => 'Competition deleted successfully']);
+}
 
     public function legtobbetSzervezo()
     {
@@ -117,15 +95,6 @@ class CompetitionController extends Controller
                 GROUP BY organiser
             ) AS sub
         );
-    ');
-    }
-
-    public function registeredRaces()
-    {
-        return DB::select('
-        SELECT event_name, start_date, organiser
-        FROM competitions
-        WHERE GETDATE() < start_date
     ');
     }
 

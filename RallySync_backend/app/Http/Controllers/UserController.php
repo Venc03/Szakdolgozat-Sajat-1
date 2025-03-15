@@ -4,71 +4,126 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
-use HasFactory, Notifiable, HasApiTokens;
-
 class UserController extends Controller
 {
-
     /**
-     * Display a listing of the resource.
+     * Get all users.
      */
     public function index()
     {
-        return User::all();
+        return DB::select('
+        SELECT u.id, u.name, u.email, p.permission
+        FROM users u
+        INNER JOIN permissions p ON u.permission = p.perm_id'
+        );
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a new user with validation.
      */
     public function store(Request $request)
     {
-        $record = new User();
-        $record->fill($request->all());
-        $record->save();
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'permission' => 'nullable|string'
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']), // Hash password
+            'permission' => $validated['permission'] ?? 'user'
+        ]);
+
+        return response()->json(['message' => 'User created successfully', 'user' => $user], 201);
     }
 
     /**
-     * Display the specified resource.
+     * Get a specific user.
      */
     public function show(string $id)
     {
-        return User::find($id);
+        $user = User::find($id);
+        return $user ? response()->json($user) : response()->json(['message' => 'User not found'], 404);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update user (Only name is allowed).
      */
     public function update(Request $request, string $id)
     {
-        $record = User::find($id);
-        $record->fill($request->all());
-        $record->save();
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->name = $validated['name'];
+        $user->save();
+
+        return response()->json(['message' => 'Username updated successfully']);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Admin Update - Change name and permission.
+     */
+    public function adminUpdate(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'permission' => 'required|string'
+        ]);
+
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->update($validated);
+
+        return response()->json(['message' => 'User updated successfully']);
+    }
+
+    /**
+     * Delete a user.
      */
     public function destroy(string $id)
     {
-        User::find($id)->delete();
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->delete();
+        return response()->json(['message' => 'User deleted successfully']);
     }
 
-
-    //speciális függvények
+    /**
+     * Update user password with validation.
+     */
     public function updatePassword(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            "password" => 'string|min:3|max:50'
+        $validated = $request->validate([
+            'password' => 'required|string|min:6|max:50',
         ]);
-        if ($validator->fails()) {
-            return response()->json(["message" => $validator->errors()->all()], 400);
+
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
         }
-        $user = User::where("id", $id)->update([
-            "password" => Hash::make($request->password),
-        ]);
-        return response()->json(["user" => $user]);
+
+        $user->password = Hash::make($validated['password']);
+        $user->save();
+
+        return response()->json(['message' => 'Password updated successfully']);
     }
 }

@@ -26,11 +26,12 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 
 Route::middleware(['auth:sanctum', Admin::class])->group(function () {
 
-    route::get("/competitions", [CompetitionController::class, "index"]);
+    route::get("/competitionGet", [CompetitionController::class, "index"]);
     route::get("/competition/{id}", [CompetitionController::class, "show"]);
+    Route::patch('/competitionModify/{id}', [CompetitionController::class, 'update']);
+    Route::delete('/competitionDelete/{id}', [CompetitionController::class, 'destroy']);
     route::get("/compcategs", [CompcategController::class, "index"]);
     route::get("/compcateg/{id}", [CompcategController::class, "show"]);
-    Route::patch('/competitionUpdate/{id}', [CompetitionController::class, 'update']);
     Route::patch('/compcategUpdate/{id}', [CompcategController::class, 'update']);
     Route::get('/carGet', [CarController::class, 'index']);
     Route::post('/carCreate', [CarController::class, 'store']);
@@ -55,6 +56,7 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
     Route::get('/registeredRaces', [CompetitionController::class, 'registeredRaces']);
     Route::get('/tookPart', [CompeetController::class, 'tookPart']);
     Route::get('/carsAccordingToCategory', [CarController::class, 'carsAccordingToCategory']);
+    Route::patch('/userAdminModify/{id}', [UserController::class, 'adminUpdate']);
 });
 
 Route::middleware(['auth:sanctum', Organiser::class])->group(function () {
@@ -65,11 +67,11 @@ Route::middleware(['auth:sanctum', Competitor::class])->group(function () {
 
 });
 
-Route::get('/users', [UserController::class, 'index']);
+Route::get('/userGet', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::get('/users/{id}', [UserController::class, 'show']);
-Route::put('/users/{id}', [UserController::class, 'update']);
-Route::delete('/users/{id}', [UserController::class, 'destroy']);
+Route::patch('/userModify/{id}', [UserController::class, 'update']);
+Route::delete('/userDelete/{id}', [UserController::class, 'destroy']);
 Route::patch('/users/{id}/update-password', [UserController::class, 'updatePassword']);
 
 
