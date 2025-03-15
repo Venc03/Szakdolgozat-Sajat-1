@@ -9,11 +9,13 @@ export const APIProvider = ({ children }) => {
     const [sajatVersenyLista, setSVL] = useState([]);
     const [helyszinLista, setHL] = useState([]);
     const [categLista, setKL] = useState([]);
-    const [carLista, setCL] = useState([]);
+    const [carList, setCL] = useState([]);
+    const [brandtypeLista, setBTL] = useState([]); 
+    const [statusLista, setSL] = useState([]); 
 
     // Get competitions for the logged-in user
     const postCompetition = useCallback(async () => {
-        if (!user) return; // Prevent fetching if there's no user
+        if (!user) return; 
         try {
             await getCsrfToken();
             const response = await myAxios.get(`/api/competition/${user}`);
@@ -24,7 +26,7 @@ export const APIProvider = ({ children }) => {
         }
     }, [user]);
 
-    // Get locations (helyszin)
+    // Get place 
     const getHelyszin = useCallback(async () => {
         try {
             await getCsrfToken();
@@ -36,7 +38,7 @@ export const APIProvider = ({ children }) => {
         }
     }, []);
 
-    // Get categories (kategória)
+    // Get categories
     const getKategoriak = useCallback(async () => {
         try {
             await getCsrfToken();
@@ -48,37 +50,67 @@ export const APIProvider = ({ children }) => {
         }
     }, []);
 
+    // Get cars
     const getCars = useCallback(async () => {
         try {
             await getCsrfToken();
             const response = await myAxios.get("/api/carGet");
-            console.log("Fetched cars:", response.data);  // Add this log to check the response
-            setCL(response.data);  // Set the car list state
+            console.log("Fetched cars:", response.data); 
+            setCL(response.data); 
         } catch (error) {
             console.error("Error fetching cars:", error);
         }
     }, []);
 
+    // Get brandtypes
+    const getBrandtype = useCallback(async () => {
+        try {
+            await getCsrfToken();
+            const response = await myAxios.get("/api/brandtypeGet");
+            console.log(response.data);
+            setBTL(response.data);
+        } catch (error) {
+            console.error("Error fetching brandtypes:", error.response?.data?.message);
+        }
+    }, []);
+
+    // Get brandtypes
+    const getStatus = useCallback(async () => {
+        try {
+            await getCsrfToken();
+            const response = await myAxios.get("/api/statusGet");
+            console.log(response.data);
+            setSL(response.data);
+        } catch (error) {
+            console.error("Error fetching status:", error.response?.data?.message);
+        }
+    }, []);
 
     useEffect(() => {
         getHelyszin();
         getKategoriak();
         getCars();
+        getBrandtype();
+        getStatus();
         if (user) {
             postCompetition(); 
         }
-    }, [getHelyszin, getKategoriak, getCars, postCompetition, user]);
+    }, [getHelyszin, getKategoriak, getCars, getBrandtype, getStatus, postCompetition, user]);
 
     return (
         <APIContext.Provider value={{
             sajatVersenyLista, 
             helyszinLista, 
             categLista, 
-            carLista,
+            carList,
+            brandtypeLista, 
+            statusLista,
             postCompetition,
             getHelyszin,
             getKategoriak,
-            getCars
+            getCars,
+            getBrandtype,
+            getStatus
         }}>
             {children}
         </APIContext.Provider>

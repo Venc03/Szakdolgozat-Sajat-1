@@ -12,18 +12,30 @@ class StatusController extends Controller
      */
     public function index()
     {
-        return Status::all();
+        $status = Status::all();
+        return response()->json($status);
     }
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
+{
+    try {
+        $validated = $request->validate([
+            'statsus' => 'required|string|max:255',
+        ]);
+
         $record = new Status();
-        $record->fill($request->all());
+        $record->statsus = $validated['statsus'];
         $record->save();
+
+        return response()->json(['message' => 'Status created successfully.'], 201);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
     }
+}
+
 
     /**
      * Display the specified resource.
@@ -37,17 +49,40 @@ class StatusController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        $record = Status::find($id);
-        $record->fill($request->all());
+{
+    $validated = $request->validate([
+        'statsus' => 'required|string|max:255',
+    ]);
+
+    $record = Status::find($id);
+    if ($record) {
+        $record->statsus = $validated['statsus']; 
         $record->save();
+        return response()->json(['message' => 'Status updated successfully.']);
+    } else {
+        return response()->json(['message' => 'Status not found.'], 404);
     }
+}
+
+
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {
-        Status::find($id)->delete();
+{
+    try {
+        $place = Status::find($id);
+
+        if (!$place) {
+            return response()->json(['message' => 'Status not found.'], 404);
+        }
+
+        $place->delete();
+
+        return response()->json(['message' => 'Status deleted successfully.'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'An error occurred while deleting the status.'], 500);
     }
+}
 }

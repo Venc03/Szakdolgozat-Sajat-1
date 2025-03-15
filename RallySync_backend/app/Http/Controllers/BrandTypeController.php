@@ -12,18 +12,26 @@ class BrandtypeController extends Controller
      */
     public function index()
     {
-        return Brandtype::all();
+        $brandtypes = Brandtype::all();
+        return response()->json($brandtypes);
     }
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $record = new Brandtype();
-        $record->fill($request->all());
-        $record->save();
-    }
+{
+    $validated = $request->validate([
+        'brandtype' => 'required|string|max:255',
+    ]);
+
+    $record = new Brandtype();
+    $record->brandtype = $validated['brandtype']; 
+    $record->save();
+
+    return response()->json(['message' => 'Brandtype created successfully.'], 201);
+}
+
 
     /**
      * Display the specified resource.
@@ -37,17 +45,31 @@ class BrandtypeController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        $record = Brandtype::find($id);
-        $record->fill($request->all());
-        $record->save();
-    }
+{
+    $record = Brandtype::find($id);
+    $record->brandtype = $request->brandtype; 
+    $record->save();
+}
+
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    {
-        Brandtype::find($id)->delete();
+{
+    try {
+        $place = Brandtype::find($id);
+
+        if (!$place) {
+            return response()->json(['message' => 'Brandtype not found.'], 404);
+        }
+
+        $place->delete();
+
+        return response()->json(['message' => 'Brandtype deleted successfully.'], 200);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'An error occurred while deleting the brandtype.'], 500);
     }
+}
+
 }

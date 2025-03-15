@@ -105,7 +105,10 @@ export default function Places() {
                         <div className="col-md-4 mb-3" key={helyszin.id || index}>
                             <div className="card">
                                 <div className="card-header">
-                                    {helyszin.place}
+                                    {helyszin.plac_id}
+                                </div>
+                                <div className="card-body">
+                                    <p><strong>Place: </strong> {helyszin.place}</p>
                                 </div>
                                 <div className="card-body d-flex justify-content-between">
                                     <Button
