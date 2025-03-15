@@ -19,6 +19,9 @@ import RaceCars from "./pages/Admin/RaceCars";
 import Categories from "./pages/Admin/Categories";
 import Competitions from "./pages/Admin/Competitions";
 import Places from "./pages/Admin/Places";
+import AProfil from "./pages/Admin/AProfil";
+import Brandtype from "./pages/Admin/Brandtype";
+import Status from "./pages/Admin/Status";
 
 
 function AppRoutes() {
@@ -54,11 +57,13 @@ function AppRoutes() {
             {user && user.permission === 3 && (
                 <Route path="/" element={<AdminLayout />}>
                     <Route index element={<AKezdolap />} />
-                    <Route path="profil" element={<Profil />} />
+                    <Route path="profil" element={<AProfil />} />
                     <Route path="versenyautok" element={<RaceCars />} />
                     <Route path="kategoriak" element={<Categories />} />
                     <Route path="versenyek" element={<Competitions />} />
                     <Route path="helyszinek" element={<Places />} />
+                    <Route path="markatipus" element={<Brandtype />} />
+                    <Route path="status" element={<Status />} />
                 </Route>
             )}
 

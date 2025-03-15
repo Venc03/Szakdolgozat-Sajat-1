@@ -24,11 +24,12 @@ class CarController extends Controller
     public function index()
     {
         return DB::select('
-            SELECT cs.cid, bt.brandtype, ca.category, ss.statsus 
+            SELECT cs.cid, bt.bt_id AS btid, ca.categ_id AS categ_id, ss.stat_id AS stat_id, bt.brandtype, ca.category, ss.statsus
             FROM cars cs
             INNER JOIN brandtypes bt ON cs.brandtype = bt.bt_id
             INNER JOIN categories ca ON cs.category = ca.categ_id
             INNER JOIN statuses ss ON cs.status = ss.stat_id
+            ORDER BY cs.cid
         ');
     }
 
@@ -61,10 +62,23 @@ class CarController extends Controller
      */
     public function store(Request $request)
     {
-        $record = new Car();
-        $record->fill($request->all());
-        $record->save();
+        $validated = $request->validate([
+            'brandtype' => 'required|integer|exists:brandtypes,bt_id',
+            'category' => 'required|integer|exists:categories,categ_id',
+            'status' => 'required|integer|exists:statuses,stat_id',
+        ]);
+    
+        // Create the car using the IDs directly
+        $car = new Car;
+        $car->brandtype = $validated['brandtype'];
+        $car->category = $validated['category'];
+        $car->status = $validated['status'];
+        $car->save();
+    
+        return response()->json(['message' => 'Car created successfully']);
     }
+    
+
 
     /**
      * Display the specified resource.
@@ -85,34 +99,21 @@ class CarController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        // Validate input to ensure correct data
-        $validator = Validator::make($request->all(), [
-            'brandtype' => 'nullable|integer|exists:brandtypes,bt_id',
-            'category'  => 'nullable|integer|exists:categories,categ_id',
-            'status'    => 'nullable|integer|exists:statuses,stat_id',
-        ]);
+{
+    $record = Car::find($id);
+    if ($record) {
+        $record->brandtype = $request->input('brandtype');
+        $record->category = $request->input('category');
+        $record->status = $request->input('statsus');
 
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 422);
-        }
-
-        // Filter out only the fields provided
-        $updateData = array_filter($request->only(['brandtype', 'category', 'status']), 'strlen');
-
-        if (empty($updateData)) {
-            return response()->json(['message' => 'No data provided for update'], 400);
-        }
-
-        // Update the record in DB
-        $updated = DB::table('cars')->where('cid', $id)->update($updateData);
-
-        if ($updated) {
-            return response()->json(['message' => 'Car updated successfully']);
-        } else {
-            return response()->json(['message' => 'Car not found or no changes made'], 404);
-        }
+        $record->save();
+        return response()->json(['message' => 'Car updated successfully']);
     }
+
+    return response()->json(['message' => 'Car not found'], 404);
+}
+
+
 
     /**
      * Remove the specified resource from storage.

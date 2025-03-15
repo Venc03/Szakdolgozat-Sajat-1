@@ -32,6 +32,8 @@ function NavigacioAdmin() {
                             <Nav.Link as={Link} to="/versenyautok" className="text-white">Versenyautók</Nav.Link>
                                 <Nav.Link as={Link} to="/kategoriak" className="text-white">Kategóriák</Nav.Link>
                                 <Nav.Link as={Link} to="/helyszinek" className="text-white">Helyszínek</Nav.Link>
+                                <Nav.Link as={Link} to="/markatipus" className="text-white">Márka Tipus</Nav.Link>
+                                <Nav.Link as={Link} to="/status" className="text-white">Státusz</Nav.Link>
                                 <Nav.Link as={Link} to="/versenyek" className="text-white">Versenyek</Nav.Link>
                                 <Nav.Link as={Link} to="/profil" className="text-white">Profil(s)</Nav.Link>
                                 <Button
@@ -51,15 +53,18 @@ function NavigacioAdmin() {
                         justify
                         variant="tabs"
                         className="collapse navbar-nav d-grid w-100 align-items-center text-center"
-                        style={{ gridTemplateColumns: "1fr  1fr 1fr auto 1fr 1fr 1fr" }}
+                        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr auto 1fr 1fr 1fr 1fr" }}
                     >
-                        <Nav.Link as={Link} to="/versenyautok" className="text-white">Versenyautók</Nav.Link>
+
+                        <Nav.Link as={Link} to="/markatipus" className="text-white">Márka Tipus</Nav.Link>
+                                <Nav.Link as={Link} to="/status" className="text-white">Státusz</Nav.Link>
                         <Nav.Link as={Link} to="/kategoriak" className="text-white">Kategóriák</Nav.Link>
                         <Nav.Link as={Link} to="/helyszinek" className="text-white">Helyszínek</Nav.Link>
                         <Navbar.Brand href="/" className="mx-4 d-flex justify-content-center">
                             <img src={logo2} alt="Logo" width="50" height="50" />
                         </Navbar.Brand>
                         <Nav.Link as={Link} to="/versenyek" className="text-white">Versenyek</Nav.Link>
+                        <Nav.Link as={Link} to="/versenyautok" className="text-white">Versenyautók</Nav.Link>
                         <Nav.Link as={Link} to="/profil" className="text-white">Profil(s)</Nav.Link>
                         <Button
                             className="logout-btn text-nowrap"

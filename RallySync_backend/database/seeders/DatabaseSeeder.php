@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
     {
         User::factory(50)->create();
         Place::factory(10)->create();
-        Car::factory(20)->create();
+        Car::factory(5)->create();
         Competition::factory(20)->create();
         Compcateg::factory(20)->create();
     }

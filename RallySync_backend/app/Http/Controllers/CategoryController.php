@@ -59,14 +59,14 @@ class CategoryController extends Controller
         $place = Category::find($id);
 
         if (!$place) {
-            return response()->json(['message' => 'Place not found.'], 404);
+            return response()->json(['message' => 'Category not found.'], 404);
         }
 
         $place->delete();
 
-        return response()->json(['message' => 'Place deleted successfully.'], 200);
+        return response()->json(['message' => 'Category deleted successfully.'], 200);
     } catch (\Exception) {
-        return response()->json(['message' => 'An error occurred while deleting the place.'], 500);
+        return response()->json(['message' => 'An error occurred while deleting the category.'], 500);
     }
 }
 }
