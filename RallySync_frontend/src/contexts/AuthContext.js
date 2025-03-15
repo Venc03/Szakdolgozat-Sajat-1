@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { myAxios } from "../api/myAxios";
+import { getCsrfToken, myAxios } from "../api/myAxios";
 import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext("");
@@ -15,10 +15,10 @@ export const AuthProvider = ({ children }) => {
         permission: "",
     });
 
-    const csrf = () => myAxios.get("/sanctum/csrf-cookie");
 
     const getUser = async () => {
         try {
+            await getCsrfToken();
             const { data } = await myAxios.get(`/api/user`);
             setUser(data);
         } catch (error) {
@@ -28,8 +28,8 @@ export const AuthProvider = ({ children }) => {
     
 
     const logout = async () => {
-        await csrf();
         try {
+            await getCsrfToken();
             await myAxios.post("/logout");
             setUser(null);
             navigate("/bejelentkezes");
@@ -45,8 +45,8 @@ export const AuthProvider = ({ children }) => {
     }, [])
 
     const loginReg = async ({ ...adat }, vegpont) => {
-        await csrf();
         try {
+            await getCsrfToken();
             await myAxios.post(vegpont, adat);
             await getUser();
             navigate("/");
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, logout, loginReg, errors, getUser }}>
+        <AuthContext.Provider value={{ user, logout, loginReg, errors, getUser, setUser }}>
             {children}
         </AuthContext.Provider>
     );

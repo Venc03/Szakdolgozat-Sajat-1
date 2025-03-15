@@ -1,11 +1,11 @@
     import React, { useContext, useState, useEffect } from 'react';
     import { Button, InputGroup, FormControl, Spinner } from "react-bootstrap";
-    import { APIContext } from '../../contexts/APIContext'; // Assuming APIContext is imported correctly
+    import { APIContext } from '../../contexts/APIContext'; 
     import { getCsrfToken, myAxios } from '../../api/myAxios';
 
     export default function Categories() {
-        const { categLista, getKategoriak } = useContext(APIContext); // Removed place-related data
-        const [categoryName, setCategoryName] = useState(""); // Renamed to categoryName
+        const { categLista, getKategoriak } = useContext(APIContext);
+        const [categoryName, setCategoryName] = useState(""); 
         const [loadingAdd, setLoadingAdd] = useState(false);
         const [loadingDelete, setLoadingDelete] = useState({});
         const [loadingModify, setLoadingModify] = useState({});
@@ -102,7 +102,7 @@
             <div className="col-md-4 mb-3" key={category.id || index}>
                 <div className="card">
                     <div className="card-header">
-                        {category.categ_id}
+                        ID: {category.categ_id}
                     </div>
                     <div className="card-body">
                         <p><strong>Category: </strong> {category.category}</p>

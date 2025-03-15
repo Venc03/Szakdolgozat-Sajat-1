@@ -102,7 +102,7 @@ export default function Brandtype() {
                         <div className="col-md-4 mb-3" key={brandtype.bt_id || index}>
                             <div className="card">
                                 <div className="card-header">
-                                    {brandtype.bt_id}
+                                    ID: {brandtype.bt_id}
                                 </div>
                                 <div className="card-body">
                                     <p><strong>Brandtype: </strong> {brandtype.brandtype}</p>

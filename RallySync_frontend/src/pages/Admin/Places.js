@@ -105,7 +105,7 @@ export default function Places() {
                         <div className="col-md-4 mb-3" key={helyszin.id || index}>
                             <div className="card">
                                 <div className="card-header">
-                                    {helyszin.plac_id}
+                                    ID: {helyszin.plac_id}
                                 </div>
                                 <div className="card-body">
                                     <p><strong>Place: </strong> {helyszin.place}</p>

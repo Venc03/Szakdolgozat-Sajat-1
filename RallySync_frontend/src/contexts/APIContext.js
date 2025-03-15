@@ -6,25 +6,25 @@ export const APIContext = createContext(null);
 
 export const APIProvider = ({ children }) => {
     const { user } = useContext(AuthContext);
-    const [sajatVersenyLista, setSVL] = useState([]);
     const [helyszinLista, setHL] = useState([]);
     const [categLista, setKL] = useState([]);
     const [carList, setCL] = useState([]);
     const [brandtypeLista, setBTL] = useState([]); 
     const [statusLista, setSL] = useState([]); 
+    const [userLista, setUL] = useState([]); 
+    const [competitionLista, setCPL ] = useState([]);
 
     // Get competitions for the logged-in user
-    const postCompetition = useCallback(async () => {
-        if (!user) return; 
+    const getCompetitions = useCallback(async () => {
         try {
             await getCsrfToken();
-            const response = await myAxios.get(`/api/competition/${user}`);
+            const response = await myAxios.get(`/api/competitionGet`);
             console.log(response.data);
-            setSVL(response.data);
+            setCPL(response.data);
         } catch (error) {
             console.error("Error fetching competitions:", error);
         }
-    }, [user]);
+    }, []);
 
     // Get place 
     const getHelyszin = useCallback(async () => {
@@ -86,31 +86,43 @@ export const APIProvider = ({ children }) => {
         }
     }, []);
 
+    const getUsers = useCallback(async () => {
+        try {
+            await getCsrfToken();
+            const response = await myAxios.get("/api/userGet");
+            console.log(response.data);
+            setUL(response.data);
+        } catch (error) {
+            console.error("Error fetching status:", error.response?.data?.message);
+        }
+    }, []);
+
     useEffect(() => {
         getHelyszin();
         getKategoriak();
         getCars();
         getBrandtype();
         getStatus();
-        if (user) {
-            postCompetition(); 
-        }
-    }, [getHelyszin, getKategoriak, getCars, getBrandtype, getStatus, postCompetition, user]);
+        getUsers();
+        getCompetitions();
+    }, [getHelyszin, getKategoriak, getCars, getBrandtype, getStatus, getUsers, getCompetitions]);
 
     return (
         <APIContext.Provider value={{
-            sajatVersenyLista, 
             helyszinLista, 
             categLista, 
             carList,
             brandtypeLista, 
             statusLista,
-            postCompetition,
+            userLista,
+            competitionLista, 
             getHelyszin,
             getKategoriak,
             getCars,
             getBrandtype,
-            getStatus
+            getStatus,
+            getUsers,
+            getCompetitions
         }}>
             {children}
         </APIContext.Provider>
