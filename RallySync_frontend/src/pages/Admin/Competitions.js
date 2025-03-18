@@ -18,45 +18,119 @@ function Competitions() {
     const [selectedOrganiser, setSelectedOrganiser] = useState("All");
     const [selectedCategory, setSelectedCategory] = useState("All");
 
-    const handleModify = async (id, oldEventName) => {
-        const newEventName = window.prompt("Enter new event name:", oldEventName);
-        if (!newEventName || newEventName.trim() === "") {
-            window.alert("The event name cannot be empty.");
-            return;
+    const handleModify = async (
+        competitionId,
+        cccategoryId,
+        oldPlace,
+        oldEventName,
+        oldMinEntry,
+        oldMaxEntry,
+        oldStartDate,
+        oldEndDate
+      ) => {
+        // Prompt user for each field that can be updated, pre-fill with old data
+        const newEventName = window.prompt("Enter new event name:" + oldEventName, oldEventName);
+        if (newEventName === null) return; // User canceled the prompt
+        if (!newEventName.trim()) {
+          window.alert("The event name cannot be empty.");
+          return;
         }
-    
-        setLoadingModify(prev => ({ ...prev, [id]: true }));
+      
+        const newCategory = window.prompt("Enter new category:" + cccategoryId, cccategoryId);
+        if (newCategory === null) return; // User canceled the prompt
+        if (!newCategory.trim()) {
+          window.alert("The category cannot be empty.");
+          return;
+        }
+      
+        const newPlace = window.prompt("Enter new place:" + oldPlace, oldPlace);
+        if (newPlace === null) return; // User canceled the prompt
+        if (!newPlace.trim()) {
+          window.alert("The place cannot be empty.");
+          return;
+        }
+      
+        const newMinEntry = window.prompt("Enter new minimum attendance:" + oldMinEntry, oldMinEntry);
+        if (newMinEntry === null) return; // User canceled the prompt
+        if (!newMinEntry || isNaN(newMinEntry) || newMinEntry < 0) {
+          window.alert("Invalid minimum attendance.");
+          return;
+        }
+      
+        const newMaxEntry = window.prompt("Enter new maximum attendance:" + oldMaxEntry, oldMaxEntry);
+        if (newMaxEntry === null) return; // User canceled the prompt
+        if (!newMaxEntry || isNaN(newMaxEntry) || newMaxEntry < 0) {
+          window.alert("Invalid maximum attendance.");
+          return;
+        }
+      
+        const newStartDate = window.prompt("Enter new start date (YYYY-MM-DD):" + oldStartDate, oldStartDate);
+        if (newStartDate === null) return; // User canceled the prompt
+        if (!newStartDate || isNaN(new Date(newStartDate))) {
+          window.alert("Invalid start date.");
+          return;
+        }
+      
+        const newEndDate = window.prompt("Enter new end date (YYYY-MM-DD):" + oldEndDate, oldEndDate);
+        if (newEndDate === null) return; // User canceled the prompt
+        if (!newEndDate || isNaN(new Date(newEndDate))) {
+          window.alert("Invalid end date.");
+          return;
+        }
+      
+        // Consolidated API call
+        const updatedData = {
+          event_name: newEventName.trim(),
+          category: newCategory.trim(),
+          place: newPlace.trim(),
+          min_entry: newMinEntry,
+          max_entry: newMaxEntry,
+          start_date: newStartDate,
+          end_date: newEndDate,
+        };
+      
+        console.log("Sending data to backend:", updatedData); // Log the data being sent
+      
+        setLoadingModify((prev) => ({ ...prev, [competitionId]: true }));
         setError("");
-    
+      
         try {
-            await getCsrfToken();
-            await myAxios.patch(`/api/competitionModifiy/${id}`, { event_name: newEventName.trim() });
-            getCompetitions(); 
+          await getCsrfToken();
+      
+          // Send the update request with all the updated fields
+          await myAxios.patch(`/api/competitionModify/${competitionId}/${cccategoryId}`, updatedData);
+      
+          // Refresh the competition list after successful update
+          getCompetitions();
+          window.alert("Competition updated successfully!");
         } catch (error) {
-            console.error("Error modifying the competition:", error.response?.data?.message);
-            setError("There was an error modifying the competition.");
+          console.error("Error modifying the competition:", error.response?.data?.message || error.message);
+          setError("There was an error modifying the competition.");
         } finally {
-            setLoadingModify(prev => ({ ...prev, [id]: false }));
+          setLoadingModify((prev) => ({ ...prev, [competitionId]: false }));
         }
-    };
+      };      
     
-    const handleDelete = async id => {
+    const handleDelete = async (competitionId, cccategoryId) => {
         if (window.confirm("Are you sure you want to delete this competition?")) {
-            setLoadingDelete(prev => ({ ...prev, [id]: true }));
+            console.log("Deleting:", competitionId, cccategoryId);
+            
+            setLoadingDelete(prev => ({ ...prev, [competitionId]: true }));
             setError("");
     
             try {
                 await getCsrfToken();
-                await myAxios.delete(`/api/competitionDelete/${id}`);
-                getCompetitions(); 
+                await myAxios.delete(`/api/competitionDelete/${competitionId}/${cccategoryId}`);
+                getCompetitions();
             } catch (error) {
                 console.error("Error deleting the competition:", error.response?.data?.message);
                 setError("There was an error deleting the competition.");
             } finally {
-                setLoadingDelete(prev => ({ ...prev, [id]: false }));
+                setLoadingDelete(prev => ({ ...prev, [competitionId]: false }));
             }
         }
     };
+    
 
     const filteredCompetitions = competitionLista.filter(competition => 
         (selectedID === "All" || competition.id === selectedID) &&
@@ -154,23 +228,34 @@ function Competitions() {
                                 <div className="card-header">ID: {competition.competition}</div>
                                 <div className="card-body">
                                     <p><strong>Verseny: </strong> {competition.event_name}</p>
-                                    <p><strong>helyszin: </strong> {competition.place}</p>
+                                    <p><strong>Helyszin: </strong> {competition.place}</p>
                                     <p><strong>Szervező: </strong> {competition.organiser}</p>
                                     <p><strong>Kategoriak: </strong> {competition.category}</p>
                                     <p><strong>Résztvevők: </strong> {competition.min_entry} - {competition.max_entry}</p>
                                     <p><strong>Dátum: </strong> {competition.start_date} - {competition.end_date}</p>
                                 </div>
                                 <div className="card-body d-flex justify-content-between">
-                                    <Button
-                                        variant="primary"
-                                        onClick={() => handleModify(competition.comp_id, competition.event_name)}
-                                        disabled={loadingModify[competition.comp_id]}
-                                    >
-                                        {loadingModify[competition.comp_id] ? <Spinner animation="border" size="sm" /> : "Modify"}
-                                    </Button>
+                                <Button
+                                    variant="primary"
+                                    onClick={() =>
+                                        handleModify(
+                                            competition.comp_id, 
+                                            competition.cccategory, 
+                                            competition.pid, 
+                                            competition.event_name, 
+                                            competition.min_entry, 
+                                            competition.max_entry, 
+                                            competition.start_date, 
+                                            competition.end_date
+                                        )
+                                    }
+                                    disabled={loadingModify[competition.comp_id]}
+                                >
+                                    {loadingModify[competition.comp_id] ? <Spinner animation="border" size="sm" /> : "Modify"}
+                                </Button>
                                     <Button
                                         variant="danger"
-                                        onClick={() => handleDelete(competition.comp_id)}
+                                        onClick={() => handleDelete(competition.comp_id, competition.cccategory)}
                                         disabled={loadingDelete[competition.comp_id]}
                                     >
                                         {loadingDelete[competition.comp_id] ? <Spinner animation="border" size="sm" /> : "Delete"}

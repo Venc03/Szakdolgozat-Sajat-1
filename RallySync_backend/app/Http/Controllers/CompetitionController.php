@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Compcateg;
 use App\Models\Competition;
+use App\Models\Place;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -19,8 +20,8 @@ class CompetitionController extends Controller
     public function index()
     {
         return DB::select('
-        SELECT c.comp_id, c.event_name, p.place, o.name as organiser, 
-        c.description, cc.min_entry, cc.max_entry, ctg.category, cc.competition, c.start_date, c.end_date
+        SELECT c.comp_id, c.event_name, c.place as pid, p.place, o.name as organiser, 
+        c.description, cc.min_entry, cc.max_entry, ctg.category, cc.category as categid, cc.competition, c.start_date, c.end_date
         FROM competitions c
         INNER JOIN users o ON c.organiser = o.id
         INNER JOIN places p ON c.place = p.plac_id
@@ -66,18 +67,69 @@ class CompetitionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $competitionId, $categoryId)
 {
-    $competition = Competition::findOrFail($id);
-    $competition->update($request->only(['event_name', 'place', 'organiser', 'description', 'start_date', 'end_date']));
+    try {
+        // Validate input data
+        $validated = $request->validate([
+            'event_name' => 'required|string',
+            'category' => 'required|string',
+            'place' => 'required|string',
+            'min_entry' => 'required|integer',
+            'max_entry' => 'required|integer',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+        ]);
 
-    return response()->json(['message' => 'Competition updated successfully']);
+        // Find the competition
+        $competition = Competition::findOrFail($competitionId);
+        $competition->update($validated);
+
+        // Find the category and associate it with the competition
+        $category = Category::findOrFail($categoryId);
+        $competition->category()->associate($category);
+        $competition->save();
+
+        return response()->json(['message' => 'Competition updated successfully'], 200);
+    } catch (\Exception $e) {
+        // Log error message
+        Log::error('Error updating competition: ' . $e->getMessage());
+        return response()->json(['message' => 'An error occurred while updating the competition.'], 500);
+    }
 }
 
-public function destroy(string $id)
+public function destroy($competitionId, $categoryId)
 {
-    Competition::findOrFail($id)->delete();
-    return response()->json(['message' => 'Competition deleted successfully']);
+    Log::info("Delete request received for Competition: $competitionId, Category: $categoryId");
+
+    try {
+        DB::beginTransaction();
+
+        // Delete related compcateg entry
+        $deletedRows = DB::table('compcategs')->where([
+            ['competition', $competitionId],
+            ['category', $categoryId]
+        ])->delete();
+
+        if ($deletedRows === 0) {
+            Log::warning("No compcateg entry found for Competition: $competitionId, Category: $categoryId");
+        }
+
+        // Check if any categories remain
+        $remainingCategories = DB::table('compcategs')->where('competition', $competitionId)->count();
+
+        if ($remainingCategories === 0) {
+            DB::table('competitions')->where('comp_id', $competitionId)->delete();
+            Log::info("Deleted competition $competitionId as it had no remaining categories.");
+        }
+
+        DB::commit();
+        return response()->json(['message' => 'Competition deleted successfully']);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error("Error deleting competition: " . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
 }
 
     public function legtobbetSzervezo()

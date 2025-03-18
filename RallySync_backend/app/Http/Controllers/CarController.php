@@ -24,7 +24,7 @@ class CarController extends Controller
     public function index()
     {
         return DB::select('
-            SELECT cs.cid, bt.bt_id AS btid, ca.categ_id AS categ_id, ss.stat_id AS stat_id, bt.brandtype, ca.category, ss.statsus
+            SELECT cs.cid, bt.bt_id AS btid, ca.categ_id AS categid, ss.stat_id AS statid   , bt.brandtype, ca.category, ss.statsus
             FROM cars cs
             INNER JOIN brandtypes bt ON cs.brandtype = bt.bt_id
             INNER JOIN categories ca ON cs.category = ca.categ_id

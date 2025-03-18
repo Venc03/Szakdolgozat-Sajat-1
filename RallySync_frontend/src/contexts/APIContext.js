@@ -14,7 +14,7 @@ export const APIProvider = ({ children }) => {
     const [userLista, setUL] = useState([]); 
     const [competitionLista, setCPL ] = useState([]);
 
-    // Get competitions for the logged-in user
+    // Get competitions
     const getCompetitions = useCallback(async () => {
         try {
             await getCsrfToken();
