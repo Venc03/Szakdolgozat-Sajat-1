@@ -73,30 +73,52 @@ class CompetitionController extends Controller
         // Validate input data
         $validated = $request->validate([
             'event_name' => 'required|string',
-            'category' => 'required|string',
-            'place' => 'required|string',
-            'min_entry' => 'required|integer',
-            'max_entry' => 'required|integer',
+            'categid' => 'required|integer|exists:categories,categ_id',
+            'pid' => 'required|integer|exists:places,plac_id',
+            'min_entry' => 'required|integer|min:0',
+            'max_entry' => 'required|integer|min:' . $request->input('min_entry'),
             'start_date' => 'required|date',
             'end_date' => 'required|date',
         ]);
 
-        // Find the competition
+        // Update the competition itself
         $competition = Competition::findOrFail($competitionId);
-        $competition->update($validated);
+        $competition->update([
+            'event_name' => $validated['event_name'],
+            'place' => $validated['pid'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+        ]);
 
-        // Find the category and associate it with the competition
-        $category = Category::findOrFail($categoryId);
-        $competition->category()->associate($category);
-        $competition->save();
+        // Delete the old compcateg record
+        $compcateg = Compcateg::where([
+            ['competition', '=', $competitionId],
+            ['category', '=', $categoryId],
+        ])->first();
+
+        if ($compcateg) {
+            $compcateg->delete(); // Delete the old record
+        }
+
+        // Create a new compcateg entry with the updated category
+        $newCompcateg = new Compcateg();
+        $newCompcateg->competition = $competitionId;
+        $newCompcateg->category = $validated['categid'];  // New category ID
+        $newCompcateg->min_entry = $validated['min_entry'];
+        $newCompcateg->max_entry = $validated['max_entry'];
+        $newCompcateg->save();
 
         return response()->json(['message' => 'Competition updated successfully'], 200);
     } catch (\Exception $e) {
-        // Log error message
-        Log::error('Error updating competition: ' . $e->getMessage());
+        // Log any errors
+        Log::error('Error updating competition: ' . $e->getMessage(), [
+            'competitionId' => $competitionId,
+            'categoryId' => $categoryId
+        ]);
         return response()->json(['message' => 'An error occurred while updating the competition.'], 500);
     }
 }
+
 
 public function destroy($competitionId, $categoryId)
 {
