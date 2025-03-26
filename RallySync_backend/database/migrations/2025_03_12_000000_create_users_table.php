@@ -22,6 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('permission')->default(1);
             $table->foreign('permission')->references('perm_id')->on('permissions');
             $table->string('password');
+            $table->string('image')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

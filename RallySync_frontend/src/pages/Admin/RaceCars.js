@@ -16,6 +16,7 @@ export default function RaceCars() {
     const [carName, setCarName] = useState(""); // Car name state
     const [categName, setCategName] = useState(""); // Category name state
     const [statusName, setStatusName] = useState(""); // Status name state
+    const [loadingImage, setLoadingImage] = useState({});
 
     useEffect(() => {
         getCars();
@@ -104,6 +105,34 @@ export default function RaceCars() {
         }
     };
 
+    // Handle Image Upload
+    const handleImageUpload = async (carId, file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('car_id', carId);
+    
+        setLoadingImage(prev => ({ ...prev, [carId]: true }));
+    
+        try {
+            const response = await myAxios.post("/api/carUploadImage", formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+    
+            if (response.data.success) {
+                console.log("Image uploaded successfully:", response.data.image_url);
+                getCars(); 
+            } else {
+                console.error("Image upload failed:", response.data.message);
+            }
+        } catch (error) {
+            console.error("Error uploading image:", error);
+        } finally {
+            setLoadingImage(prev => ({ ...prev, [carId]: false }));
+        }
+    };
+
     return (
         <div className="container mt-5">
             <h1>Versenyautók</h1>
@@ -164,15 +193,59 @@ export default function RaceCars() {
             {/* Car List */}
             <div className="row mt-3">
                 {sortedCars.length > 0 ? (
-                    sortedCars.map((car, index) => (
-                        <div key={car.cid || index} className="col-md-4 mb-3">
+                    sortedCars.map((car) => (
+                        <div key={car.cid} className="col-md-4 mb-3">
                             <div className="card">
                                 <div className="card-header">ID: {car.cid}</div>
                                 <div className="card-body">
+                                    {/* Image or Upload Button */}
+                                    <div className="card-body text-center">
+                                        {car.image ? (
+                                            <div className="d-flex flex-column">
+                                                <img
+                                                    src={car.image}
+                                                    alt={`Car image: ${car.brandtype}`}
+                                                    className="img-fluid mb-2"
+                                                    style={{ maxHeight: "150px" }}
+                                                />
+                                                <Button
+                                                    variant="primary"
+                                                    onClick={() => document.getElementById(`file-input-${car.cid}`).click()}
+                                                    disabled={loadingImage[car.cid]}
+                                                >
+                                                    {loadingImage[car.cid] ? (
+                                                        <Spinner as="span" animation="border" size="sm" />
+                                                    ) : (
+                                                        "Kép megváltoztatása"
+                                                    )}
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                variant="warning"
+                                                onClick={() => document.getElementById(`file-input-${car.cid}`).click()}
+                                                disabled={loadingImage[car.cid]}
+                                            >
+                                                {loadingImage[car.cid] ? (
+                                                    <Spinner as="span" animation="border" size="sm" />
+                                                ) : (
+                                                    "Kép hozzáadása"
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Hidden File Input */}
+                                    <input
+                                        type="file"
+                                        id={`file-input-${car.cid}`}
+                                        style={{ display: "none" }}
+                                        accept="image/*"
+                                        onChange={e => handleImageUpload(car.cid, e.target.files[0])}
+                                    />
                                     <p><strong>Márka: </strong> {car.brandtype}</p>
                                     <p><strong>Kategória: </strong> {car.category}</p>
                                     <p><strong>Státusz: </strong> {car.statsus}</p>
-                                    
                                 </div>
                                 <div className="card-body d-flex justify-content-between">
                                     <Button 

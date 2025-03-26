@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Car;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CarController extends Controller
@@ -24,7 +25,7 @@ class CarController extends Controller
     public function index()
     {
         return DB::select('
-            SELECT cs.cid, bt.bt_id AS btid, ca.categ_id AS categid, ss.stat_id AS statid   , bt.brandtype, ca.category, ss.statsus
+            SELECT cs.cid, bt.bt_id AS btid, ca.categ_id AS categid, ss.stat_id AS statid, bt.brandtype, ca.category, ss.statsus, cs.image
             FROM cars cs
             INNER JOIN brandtypes bt ON cs.brandtype = bt.bt_id
             INNER JOIN categories ca ON cs.category = ca.categ_id
@@ -133,4 +134,41 @@ class CarController extends Controller
             [$car]
         );
     }
+
+    public function uploadImage(Request $request)
+{
+    // Validate the uploaded image
+    $validated = $request->validate([
+        'image' => 'required|image|max:10240', // max 10MB
+    ]);
+
+    // Get the car ID and the uploaded image
+    $carId = $request->input('car_id');
+    $image = $request->file('image');
+
+    // Generate a new filename for the image
+    $fileName = $carId . '_' . time() . '.' . $image->getClientOriginalExtension();
+
+    // Step 1: Copy the image to the public/cars directory
+    $image->move(public_path('cars'), $fileName);
+
+    // Step 2: Generate the public URL for the uploaded image
+    $imageUrl = asset('cars/' . $fileName);  // This is the URL that can be accessed in the browser
+
+    // Step 3: Update the car's image in the database with the new image URL
+    $car = Car::find($carId);
+    if ($car) {
+        $car->image = $imageUrl;
+        $car->save();
+    } else {
+        return response()->json(['error' => 'Car not found'], 404);
+    }
+
+    // Step 4: Return the image URL in the response
+    return response()->json([
+        'success' => true,
+        'image_url' => $imageUrl
+    ]);
+}
+
 }

@@ -15,10 +15,11 @@ return new class extends Migration
     {
         Schema::create('cars', function (Blueprint $table) {
             $table->id('cid');
-            $table->foreignId('brandtype') -> references('bt_id')->on('brandtypes');
-            $table->foreignId('category') -> references('categ_id')->on('categories');
+            $table->foreignId('brandtype')->constrained('brandtypes', 'bt_id');
+            $table->foreignId('category') -> constrained('categories', 'categ_id');
             $table->unsignedBigInteger('status');
             $table->foreign('status')->references('stat_id')->on('statuses');
+            $table->string('image')->nullable();
             $table->timestamps();
         });
     }

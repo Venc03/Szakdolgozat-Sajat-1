@@ -14,6 +14,7 @@ function AProfil() {
     const [selectedID, setSelectedID] = useState("All");
     const [selectedName, setSelectedName] = useState("All");
     const [selectedPermission, setSelectedPermission] = useState("All");
+    const [loadingImage, setLoadingImage] = useState({});
 
     const handleModify = async (id, oldName) => {
         const newName = window.prompt("Enter new user name:", oldName);
@@ -83,6 +84,34 @@ function AProfil() {
         }
     };
 
+    // Handle Image Upload
+        const handleImageUpload = async (Id, file) => {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('id', Id);
+        
+            setLoadingImage(prev => ({ ...prev, [Id]: true }));
+        
+            try {
+                const response = await myAxios.post("/api/userUploadImage", formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+        
+                if (response.data.success) {
+                    console.log("Image uploaded successfully:", response.data.image_url);
+                    getUsers(); 
+                } else {
+                    console.error("Image upload failed:", response.data.message);
+                }
+            } catch (error) {
+                console.error("Error uploading image:", error);
+            } finally {
+                setLoadingImage(prev => ({ ...prev, [Id]: false }));
+            }
+        };
+
     // Filtered and sorted users
     const filteredUsers = userLista.filter(user => 
         (selectedID === "All" || user.id === selectedID) &&
@@ -107,6 +136,51 @@ function AProfil() {
             <div className="card m-5 w-25">
                 <div className="card-header d-flex justify-content-center align-items-center">
                     <h3>Info:</h3>
+                </div>
+                {/* Image or Upload Button */}
+                <div className="card-body text-center">
+                    {user.image ? (
+                        <div className="d-flex flex-column">
+                            <img
+                                src={user.image}
+                                alt={`User image: ${user.name}`}
+                                className="img-fluid mb-2"
+                                style={{ maxHeight: "150px" }}
+                            />
+                            <Button
+                                variant="primary"
+                                onClick={() => document.getElementById(`file-input-${user.id}`).click()}
+                                disabled={loadingImage[user.id]}
+                            >
+                                {loadingImage[user.id] ? (
+                                    <Spinner as="span" animation="border" size="sm" />
+                                ) : (
+                                    "Kép megváltoztatása"
+                                )}
+                            </Button>
+                        </div>
+                    ) : (
+                        <Button
+                            variant="warning"
+                            onClick={() => document.getElementById(`file-input-${user.id}`).click()}
+                            disabled={loadingImage[user.id]}
+                        >
+                            {loadingImage[user.id] ? (
+                                <Spinner as="span" animation="border" size="sm" />
+                            ) : (
+                                "Kép hozzáadása"
+                            )}
+                        </Button>
+                    )}
+
+                    {/* Hidden File Input */}
+                    <input
+                        type="file"
+                        id={`file-input-${user.id}`}
+                        style={{ display: "none" }}
+                        accept="image/*"
+                        onChange={e => handleImageUpload(user.id, e.target.files[0])}
+                    />
                 </div>
                 <ul className="list-group list-group-flush">
                     <li className="list-group-item">{user.name}</li>

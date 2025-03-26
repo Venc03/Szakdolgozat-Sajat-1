@@ -37,6 +37,7 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
     Route::post('/carCreate', [CarController::class, 'store']);
     Route::patch('/carModify/{id}', [CarController::class, 'update']);
     Route::delete('/carDelete/{id}', [CarController::class, 'destroy']);
+    Route::post('/carUploadImage', [CarController::class, 'uploadImage']);
     Route::get('/categGet', [CategoryController::class, 'index']);
     Route::post('/categCreate', [CategoryController::class, 'store']);
     Route::patch('/categModify/{id}', [CategoryController::class, 'update']);
@@ -73,6 +74,7 @@ Route::get('/users/{id}', [UserController::class, 'show']);
 Route::patch('/userModify/{id}', [UserController::class, 'update']);
 Route::delete('/userDelete/{id}', [UserController::class, 'destroy']);
 Route::patch('/users/{id}/update-password', [UserController::class, 'updatePassword']);
+Route::post('/userUploadImage', [UserController::class, 'uploadImage']);
 
 
 Route::post('/register', [RegisteredUserController::class, 'store']);

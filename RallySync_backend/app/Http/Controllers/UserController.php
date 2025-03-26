@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index()
     {
         return DB::select('
-        SELECT u.id, u.name, u.email, p.permission
+        SELECT u.id, u.name, u.email, p.permission, u.image
         FROM users u
         INNER JOIN permissions p ON u.permission = p.perm_id'
         );
@@ -126,4 +126,40 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Password updated successfully']);
     }
+
+    public function uploadImage(Request $request)
+{
+    // Validate the uploaded image
+    $validated = $request->validate([
+        'image' => 'required|image|max:10240', // max 10MB
+    ]);
+
+    // Get the car ID and the uploaded image
+    $Id = $request->input('id');
+    $image = $request->file('image');
+
+    // Generate a new filename for the image
+    $fileName = $Id . '_' . time() . '.' . $image->getClientOriginalExtension();
+
+    // Step 1: Copy the image to the public/cars directory
+    $image->move(public_path('users'), $fileName);
+
+    // Step 2: Generate the public URL for the uploaded image
+    $imageUrl = asset('users/' . $fileName);  // This is the URL that can be accessed in the browser
+
+    // Step 3: Update the car's image in the database with the new image URL
+    $user = User::find($Id);
+    if ($user) {
+        $user->image = $imageUrl;
+        $user->save();
+    } else {
+        return response()->json(['error' => 'Car not found'], 404);
+    }
+
+    // Step 4: Return the image URL in the response
+    return response()->json([
+        'success' => true,
+        'image_url' => $imageUrl
+    ]);
+}
 }

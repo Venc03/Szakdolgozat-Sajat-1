@@ -15,7 +15,7 @@ function NavigacioAdmin() {
             <Container fluid>
 
                 {/* MOBIL MENÜ */}
-                <div className="d-md-none">
+                <div className="d-md-none w-100 d-flex justify-content-end">
                     <Navbar.Toggle aria-controls="offcanvasNavbar" className="border-0 toggle-white" />
                     <Navbar.Offcanvas
                         id="offcanvasNavbar"
@@ -27,9 +27,9 @@ function NavigacioAdmin() {
                                 Menü
                             </Offcanvas.Title>
                         </Offcanvas.Header>
-                        <Offcanvas.Body>
+                        <Offcanvas.Body className="bg-dark">
                             <Nav className="justify-content-end flex-grow-1 pe-3">
-                            <Nav.Link as={Link} to="/versenyautok" className="text-white">Versenyautók</Nav.Link>
+                                <Nav.Link as={Link} to="/versenyautok" className="text-white">Versenyautók</Nav.Link>
                                 <Nav.Link as={Link} to="/kategoriak" className="text-white">Kategóriák</Nav.Link>
                                 <Nav.Link as={Link} to="/helyszinek" className="text-white">Helyszínek</Nav.Link>
                                 <Nav.Link as={Link} to="/markatipus" className="text-white">Márka Tipus</Nav.Link>
@@ -37,10 +37,7 @@ function NavigacioAdmin() {
                                 <Nav.Link as={Link} to="/versenyek" className="text-white">Versenyek</Nav.Link>
                                 <Nav.Link as={Link} to="/profil" className="text-white">Profil(s)</Nav.Link>
                                 <Nav.Item className="text-white">Felhasználó: {user.name}</Nav.Item>
-                                <Button
-                                    className="logout-btn text-nowrap"
-                                    onClick={logout}
-                                >
+                                <Button className="logout-btn text-nowrap" onClick={logout}>
                                     Kijelentkezés
                                 </Button>
                             </Nav>
