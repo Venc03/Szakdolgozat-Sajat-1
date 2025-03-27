@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import useAuthContext from "../../contexts/AuthContext";
 import { Button, Spinner, Form } from "react-bootstrap";
 import { getCsrfToken, myAxios } from "../../api/myAxios";
@@ -17,6 +17,10 @@ function Competitions() {
     const [selectedPlace, setSelectedPlace] = useState("All");
     const [selectedOrganiser, setSelectedOrganiser] = useState("All");
     const [selectedCategory, setSelectedCategory] = useState("All");
+
+    useEffect(() => {
+        getCompetitions();
+    }, [getCompetitions]);
 
     const handleModify = async (
         competitionId,
@@ -87,7 +91,7 @@ function Competitions() {
         // Consolidated API call
         const updatedData = {
             event_name: newEventName.trim(),
-            categid: parsedCategory, // Ensure category ID is passed correctly
+            categid: parsedCategory,
             pid: newPlace.trim(),
             min_entry: newMinEntry,
             max_entry: newMaxEntry,

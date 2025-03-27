@@ -28,8 +28,8 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
 
     route::get("/competitionGet", [CompetitionController::class, "index"]);
     route::get("/competition/{id}", [CompetitionController::class, "show"]);
-    Route::patch('/competitionModify/{competitionId}/{ccccategoryId}', [CompetitionController::class, 'update']);
-    Route::delete('/competitionDelete/{competitionId}/{ccccategoryId}', [CompetitionController::class, 'destroy']);
+    Route::patch('/competitionModify/{competitionId}/{categoryId}', [CompetitionController::class, 'update']);
+    Route::delete('/competitionDelete/{competitionId}/{categoryId}', [CompetitionController::class, 'destroy']);
     route::get("/compcategs", [CompcategController::class, "index"]);
     route::get("/compcateg/{id}", [CompcategController::class, "show"]);
     Route::patch('/compcategUpdate/{id}', [CompcategController::class, 'update']);

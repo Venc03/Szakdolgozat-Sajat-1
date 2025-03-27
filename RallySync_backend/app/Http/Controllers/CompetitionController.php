@@ -90,6 +90,7 @@ class CompetitionController extends Controller
             'end_date' => $validated['end_date'],
         ]);
 
+            echo("competition updeta success (before compcateg delete)");
         // Delete the old compcateg record
         $compcateg = Compcateg::where([
             ['competition', '=', $competitionId],
@@ -100,13 +101,17 @@ class CompetitionController extends Controller
             $compcateg->delete(); // Delete the old record
         }
 
+        echo("compcateg delete success");
+
         // Create a new compcateg entry with the updated category
         $newCompcateg = new Compcateg();
         $newCompcateg->competition = $competitionId;
-        $newCompcateg->category = $validated['categid'];  // New category ID
+        $newCompcateg->category = $validated['categid'];  
         $newCompcateg->min_entry = $validated['min_entry'];
         $newCompcateg->max_entry = $validated['max_entry'];
         $newCompcateg->save();
+
+        echo("compcateg new data created success    ");
 
         return response()->json(['message' => 'Competition updated successfully'], 200);
     } catch (\Exception $e) {

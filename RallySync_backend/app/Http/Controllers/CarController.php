@@ -103,17 +103,30 @@ class CarController extends Controller
 {
     $record = Car::find($id);
     if ($record) {
-        $record->brandtype = $request->input('brandtype');
-        $record->category = $request->input('category');
-        $record->status = $request->input('statsus');
+        $validated = $request->validate([
+            'brandtype' => 'required|integer|exists:brandtypes,bt_id',
+            'category' => 'required|integer|exists:categories,categ_id',
+            'status' => 'required|integer|exists:statuses,stat_id',
+        ]);
+
+        $record->brandtype = $validated['brandtype'];
+        $record->category = $validated['category'];
+        $record->status = $validated['status'];
+
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $fileName = $id . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('cars'), $fileName);
+            $record->image = asset('cars/' . $fileName);
+        }
 
         $record->save();
+
         return response()->json(['message' => 'Car updated successfully']);
     }
 
     return response()->json(['message' => 'Car not found'], 404);
 }
-
 
 
     /**

@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { Button, InputGroup, FormControl, Spinner, Form } from "react-bootstrap";
+import { Button, InputGroup, FormControl, Spinner, Form, Modal } from "react-bootstrap";
 import APIContext from "../../contexts/APIContext";
 import { myAxios } from "../../api/myAxios";
 
@@ -10,17 +10,59 @@ export default function RaceCars() {
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedStatus, setSelectedStatus] = useState("All");
     const [sortCriteria, setSortCriteria] = useState("ID");
-    const [loadingAdd, setLoadingAdd] = useState(false); // Loading state for add
-    const [loadingDelete, setLoadingDelete] = useState({}); // Loading state for delete
-    const [loadingModify, setLoadingModify] = useState({}); // Loading state for modify
-    const [carName, setCarName] = useState(""); // Car name state
-    const [categName, setCategName] = useState(""); // Category name state
-    const [statusName, setStatusName] = useState(""); // Status name state
+    const [loadingAdd, setLoadingAdd] = useState(false);
+    const [loadingDelete, setLoadingDelete] = useState({}); 
+    const [loadingModify, setLoadingModify] = useState({}); 
+    const [carName, setCarName] = useState(""); 
+    const [categName, setCategName] = useState(""); 
+    const [statusName, setStatusName] = useState(""); 
     const [loadingImage, setLoadingImage] = useState({});
+    const [showModal, setShowModal] = useState(false);
+    const [editingCar, setEditingCar] = useState(null);    
+    const { brandtypeLista, getBrandtype } = useContext(APIContext); 
+    const { categLista, getKategoriak } = useContext(APIContext);
+    const { statusLista, getStatus } = useContext(APIContext); 
+    const [brandOptions, setBrandOptions] = useState([]);
+    const [categoryOptions, setCategoryOptions] = useState([]);
+    const [statusOptions, setStatusOptions] = useState([]);
 
     useEffect(() => {
         getCars();
-    }, [getCars]);
+        getBrandtype();
+        getKategoriak();
+        getStatus();
+    }, [getCars, brandtypeLista, categLista, statusLista]);
+
+    useEffect(() => {
+        setBrandOptions(brandtypeLista.map(brand => brand.brandtype)); 
+    }, [brandtypeLista]);
+    
+    useEffect(() => {
+        setCategoryOptions(categLista.map(category => category.category)); 
+    }, [categLista]);
+    
+    useEffect(() => {
+        setStatusOptions(statusLista.map(status => status.statsus));
+    }, [statusLista]);
+
+    const getBrandId = (brandtype) => {
+        const brand = brandtypeLista.find(b => b.brandtype === brandtype);
+        return brand ? brand.id : null;  
+    };
+    
+    const getCategoryId = (category) => {
+        const cat = categLista.find(c => c.category === category);
+        return cat ? cat.id : null;  
+    };
+    
+    const getStatusId = (status) => {
+        const stat = statusLista.find(s => s.statsus === status);
+        return stat ? stat.id : null; 
+    };
+
+    const brandtypeId = getBrandId(editingCar?.bt_id);
+    const categoryId = getCategoryId(editingCar?.categ_id);  
+    const statusId = getStatusId(editingCar?.stat_id);
 
     const filteredCars = carList.filter(car =>
         (selectedID === "All" || car.cid === selectedID) &&
@@ -78,32 +120,54 @@ export default function RaceCars() {
         }
     };
 
-    // Handle Modify Car
-    const handleModify = async (id, oldBrandId, oldCategoryId, oldStatusId) => {
-        const newBrand = window.prompt("Enter new brand (current: " + oldBrandId + "):", oldBrandId);
-        const newCategory = window.prompt("Enter new category (current: " + oldCategoryId + "):", oldCategoryId);
-        const newStatus = window.prompt("Enter new status (current: " + oldStatusId + "):", oldStatusId);
-    
-        if (!newBrand.trim() || !newCategory.trim() || !newStatus.trim()) {
-            alert("Brand, Category, and Status cannot be empty.");
-            return;
-        }
-
-        setLoadingModify(prev => ({ ...prev, [id]: true }));
-     
-        try {
-            await myAxios.patch(`/api/carModify/${id}`, {
-                brandtype: newBrand.trim(),
-                category: newCategory.trim(),
-                statsus: newStatus.trim(),
-            });
-            getCars();
-        } catch (error) {
-            console.error("Error modifying the car:", error);
-        } finally {
-            setLoadingModify(prev => ({ ...prev, [id]: false }));
-        }
+    // Open Modify Modal
+    const openModifyModal = (car) => {
+        setEditingCar({ ...car }); // Copy the car data
+        setShowModal(true);
     };
+
+    // Handle Input Change in Modal
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setEditingCar((prev) => ({ ...prev, [name]: value }));
+    };
+
+    // Handle Modify Save
+const handleModifySave = async () => {
+    if (!editingCar.brandtype.trim() || !editingCar.category.trim() || !editingCar.statsus.trim()) {
+        alert("Brand, Category, and Status cannot be empty.");
+        return;
+    }
+
+    // Ensure editingCar has valid values before sending request
+    if (!editingCar.brandtype || !editingCar.category || !editingCar.statsus) {
+        alert("All fields must be filled in.");
+        return;
+    }
+
+    // Ensure that brandtype, category, and status are sent as IDs (not strings)
+    const brandtypeId = getBrandId(editingCar.brandtype);
+    const categoryId = getCategoryId(editingCar.category);
+    const statusId = getStatusId(editingCar.statsus);
+
+    setLoadingModify((prev) => ({ ...prev, [editingCar.cid]: true }));
+
+    try {
+        // Modify the car by sending the IDs to the backend
+        await myAxios.patch(`/api/carModify/${editingCar.cid}`, {
+            brandtype: brandtypeId, // Ensure brandtypeId is sent
+            category: categoryId,   // Ensure categoryId is sent
+            status: statusId,       // Ensure statusId is sent
+        });
+        getCars(); // Refresh the car list after modifying
+        setShowModal(false); // Close the modal after successful modification
+    } catch (error) {
+        console.error("Error modifying the car:", error.response?.data || error.message);
+        alert("Failed to modify the car. Please try again.");
+    } finally {
+        setLoadingModify((prev) => ({ ...prev, [editingCar.cid]: false }));
+    }
+};
 
     // Handle Image Upload
     const handleImageUpload = async (carId, file) => {
@@ -132,6 +196,7 @@ export default function RaceCars() {
             setLoadingImage(prev => ({ ...prev, [carId]: false }));
         }
     };
+
 
     return (
         <div className="container mt-5">
@@ -250,10 +315,10 @@ export default function RaceCars() {
                                 <div className="card-body d-flex justify-content-between">
                                     <Button 
                                         variant="primary" 
-                                        onClick={() => handleModify(car.cid, car.btid, car.categid, car.statid)} 
+                                        onClick={() => openModifyModal(car)}
                                         disabled={loadingModify[car.cid]}>
                                         {loadingModify[car.cid] ? <Spinner as="span" animation="border" size="sm" /> : 'Módosítás'}
-                                    </Button>
+                                    </Button>            
                                     <Button 
                                         variant="danger" 
                                         onClick={() => handleDelete(car.cid)} 
@@ -268,6 +333,54 @@ export default function RaceCars() {
                     <p>Nincs található autó!</p>
                 )}
             </div>
+
+            {/* Modify Car Modal */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Autó módosítása</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {editingCar && (
+                        <Form>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Márka</Form.Label>
+                                <Form.Select value={selectedBrand} onChange={e => setSelectedBrand(e.target.value)}>
+                                    <option value="All">Márka szűrő</option>
+                                    {brandtypeLista.map(brand => (
+                                        <option key={brand.id} value={brand.id}>{brand.brandtype}</option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Kategória</Form.Label>
+                                <Form.Select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}>
+                                    <option value="All">Kategória szűrő</option>
+                                    {categLista.map(category => (
+                                        <option key={category.id} value={category.id}>{category.category}</option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Státusz</Form.Label>
+                                <Form.Select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)}>
+                                    <option value="All">Státusz szűrő</option>
+                                    {statusLista.map(status => (
+                                        <option key={status.id} value={status.id}>{status.statsus}</option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Form>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowModal(false)}>
+                        Mégse
+                    </Button>
+                    <Button variant="success" onClick={handleModifySave} disabled={loadingModify[editingCar?.cid]}>
+                        {loadingModify[editingCar?.cid] ? <Spinner as="span" animation="border" size="sm" /> : "Módosítás"}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }

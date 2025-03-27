@@ -50,7 +50,12 @@ class UserController extends Controller
     public function show(string $id)
     {
         $user = User::find($id);
-        return $user ? response()->json($user) : response()->json(['message' => 'User not found'], 404);
+        return DB::select('
+        SELECT u.id, u.name, u.email, p.permission, u.image
+        FROM users u
+        INNER JOIN permissions p ON u.permission = p.perm_id
+        WHERE u.id = ?', [$id]
+        );
     }
 
     /**

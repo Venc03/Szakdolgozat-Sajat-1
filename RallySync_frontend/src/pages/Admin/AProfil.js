@@ -183,9 +183,9 @@ function AProfil() {
                     />
                 </div>
                 <ul className="list-group list-group-flush">
-                    <li className="list-group-item">{user.name}</li>
-                    <li className="list-group-item">{user.email}</li>
-                    <li className="list-group-item">{user.permission}</li>
+                    <li className="list-group-item"><strong>Username: </strong>{user.name}</li>
+                    <li className="list-group-item"><strong>User email: </strong>{user.email}</li>
+                    <li className="list-group-item"><strong>Permission: </strong>{user.permission}</li>
                     <li className="list-group-item d-flex justify-content-center align-items-center">
                         <Button
                             variant="primary"
