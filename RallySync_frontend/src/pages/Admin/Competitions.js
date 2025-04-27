@@ -1,12 +1,12 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import useAuthContext from "../../contexts/AuthContext";
-import { Button, Spinner, Form } from "react-bootstrap";
+import { Button, Spinner, Form, Modal } from "react-bootstrap";
 import { getCsrfToken, myAxios } from "../../api/myAxios";
 import APIContext from "../../contexts/APIContext";
 
 function Competitions() {
     const { user, setUser } = useAuthContext();
-    const { competitionLista, getCompetitions } = useContext(APIContext);
+    const { competitionLista, getCompetitions, helyszinLista, getHelyszin, categLista, getKategoriak } = useContext(APIContext);
     const [competitionName, setCompetitionName] = useState(""); 
     const [loadingModify, setLoadingModify] = useState({});
     const [loadingDelete, setLoadingDelete] = useState({});
@@ -17,119 +17,99 @@ function Competitions() {
     const [selectedPlace, setSelectedPlace] = useState("All");
     const [selectedOrganiser, setSelectedOrganiser] = useState("All");
     const [selectedCategory, setSelectedCategory] = useState("All");
+    const [placeOptions, setPlaceOptions] = useState([]);
+    const [categoryOptions, setCategoryOptions] = useState([]);
+    const [editingComp, setEditingComp] = useState(null); 
+    const [showModal, setShowModal] = useState(false);
 
-    const handleModify = async (
-        competitionId,
-        categid,
-        oldPlace,
-        oldEventName,
-        oldMinEntry,
-        oldMaxEntry,
-        oldStartDate,
-        oldEndDate
-    ) => {
-        // Prompt user for each field that can be updated, pre-fill with old data
-        const newEventName = window.prompt("Enter new event name:", oldEventName);
-        if (newEventName === null) return; // User canceled the prompt
-        if (!newEventName.trim()) {
-            window.alert("The event name cannot be empty.");
+    useEffect(() => {
+        getHelyszin();
+        getKategoriak();
+        getCompetitions();
+    }, []);
+
+    useEffect(() => {
+        setPlaceOptions(helyszinLista.map(place => place.place)); 
+    }, [helyszinLista]);
+        
+    useEffect(() => {
+        setCategoryOptions(categLista.map(category => category.category)); 
+    }, [categLista]);
+
+    const getPlaceId = (placeName) => {  
+        const foundPlace = helyszinLista.find(p => p.place === placeName);
+        return foundPlace ? foundPlace.plac_id : null;
+    };
+    
+    const getCategoryId = (category) => {
+        const cat = categLista.find(c => c.category === category);
+        return cat ? cat.categ_id : null;
+    };
+
+    const handleModify = (competitionId, categid, oldDetails) => {
+        if (!oldDetails || !competitionId || !categid) {
+            console.error("Missing necessary parameters:", competitionId, categid, oldDetails);
             return;
         }
+        setEditingComp({
+            ...oldDetails,
+            oldCategoryId: categid, 
+            oldCompId: competitionId
+        });
+        setShowModal(true);
+    };
 
-        const newCategory = window.prompt("Enter new category (ID):", categid); // Asking for category ID instead of name
-        if (newCategory === null) return; // User canceled the prompt
-        if (!newCategory.trim()) {
-            window.alert("The category cannot be empty.");
+    const handleModalClose = () => setShowModal(false);
+
+    // Handle Modify Save
+    const handleModifySave = async () => {
+        if (!editingComp) return;
+        const { place, category, comp_id, event_name, min_entry, max_entry, start_date, end_date, oldCategoryId, oldCompId } = editingComp;
+   
+        if (!place || !category) {
+            alert("Minden mezőt ki kell tölteni! (You must fill all fields)");
             return;
         }
-
-        const parsedCategory = parseInt(newCategory.trim(), 10);
-        if (isNaN(parsedCategory)) {
-            window.alert("Invalid category.");
+   
+        const placeId = getPlaceId(place);
+        const categoryId = getCategoryId(category);
+   
+        if (!placeId || !categoryId) {
+            alert("Invalid data. Please ensure all fields are properly selected.");
             return;
         }
-
-        const newPlace = window.prompt("Enter new place:", oldPlace);
-        if (newPlace === null) return; // User canceled the prompt
-        if (!newPlace.trim()) {
-            window.alert("The place cannot be empty.");
-            return;
-        }
-
-        const newMinEntry = window.prompt("Enter new minimum attendance:", oldMinEntry);
-        if (newMinEntry === null) return; // User canceled the prompt
-        if (!newMinEntry || isNaN(newMinEntry) || newMinEntry < 0) {
-            window.alert("Invalid minimum attendance.");
-            return;
-        }
-
-        const newMaxEntry = window.prompt("Enter new maximum attendance:", oldMaxEntry);
-        if (newMaxEntry === null) return; // User canceled the prompt
-        if (!newMaxEntry || isNaN(newMaxEntry) || newMaxEntry < 0) {
-            window.alert("Invalid maximum attendance.");
-            return;
-        }
-
-        const newStartDate = window.prompt("Enter new start date (YYYY-MM-DD):", oldStartDate);
-        if (newStartDate === null) return; // User canceled the prompt
-        if (!newStartDate || isNaN(new Date(newStartDate))) {
-            window.alert("Invalid start date.");
-            return;
-        }
-
-        const newEndDate = window.prompt("Enter new end date (YYYY-MM-DD):", oldEndDate);
-        if (newEndDate === null) return; // User canceled the prompt
-        if (!newEndDate || isNaN(new Date(newEndDate))) {
-            window.alert("Invalid end date.");
-            return;
-        }
-
-        // Consolidated API call
-        const updatedData = {
-            event_name: newEventName.trim(),
-            categid: parsedCategory, // Ensure category ID is passed correctly
-            pid: newPlace.trim(),
-            min_entry: newMinEntry,
-            max_entry: newMaxEntry,
-            start_date: newStartDate,
-            end_date: newEndDate,
+   
+        const compData = {
+            event_name,
+            categid: categoryId,
+            pid: placeId,
+            min_entry,
+            max_entry,
+            start_date,
+            end_date,
         };
-
-        {console.log("Sending PATCH request to:", `/api/competitionModify/${competitionId}/${categid}`)}
-        {console.log("Updated data:", updatedData)}
-
-        setLoadingModify((prev) => ({ ...prev, [competitionId]: true }));
-        setError("");
-
+   
         try {
-            await getCsrfToken();
-
-            // Send the update request with all the updated fields
-            await myAxios.patch(`/api/competitionModify/${competitionId}/${categid}`, updatedData);
-
-            // Refresh the competition list after successful update
+            const response = await myAxios.patch(`/api/competitionModify/${oldCompId}/${oldCategoryId}`, compData);
+            console.log("Competition modified successfully:", response.data);
             getCompetitions();
-            window.alert("Competition updated successfully!");
+            setShowModal(false);
         } catch (error) {
-            console.error("Error modifying the competition:", error.response?.data?.message || error.message);
-            setError("There was an error modifying the competition.");
-        } finally {
-            setLoadingModify((prev) => ({ ...prev, [competitionId]: false }));
+            console.error("Error modifying the competition:", error.response?.data);
+            setError("An error occurred while updating the competition.");
         }
     };
 
-
+    // Handle Delete
     const handleDelete = async (competitionId, categoryId) => {
         if (window.confirm("Are you sure you want to delete this competition?")) {
-            console.log("Deleting:", competitionId, categoryId);
-
             setLoadingDelete(prev => ({ ...prev, [competitionId]: true }));
             setError("");
 
             try {
                 await getCsrfToken();
                 await myAxios.delete(`/api/competitionDelete/${competitionId}/${categoryId}`);
-                getCompetitions();
+                getCompetitions(); 
             } catch (error) {
                 console.error("Error deleting the competition:", error.response?.data?.message);
                 setError("There was an error deleting the competition.");
@@ -139,7 +119,6 @@ function Competitions() {
         }
     };
 
-
     const filteredCompetitions = competitionLista.filter(competition => 
         (selectedID === "All" || competition.id === selectedID) &&
         (selectedName === "All" || competition.name.includes(selectedName)) && 
@@ -148,37 +127,18 @@ function Competitions() {
         (selectedCategory === "All" || competition.category === selectedCategory) 
     );
 
-    const today = new Date().toISOString().split("T")[0]; 
-
     const sortedCompetitions = filteredCompetitions.sort((a, b) => {
-        // Sorting based on selected criteria
         if (sortCriteria === "ID") {
-            return a.competition - b.competition;  // Sorting by competition ID
+            return a.comp_id - b.comp_id;
         } else if (sortCriteria === "Name") {
-            return (a.name || "").localeCompare(b.name || "");  
+            return (a.event_name || "").localeCompare(b.event_name || "");
         } else if (sortCriteria === "Place") {
-            return (a.place || "").localeCompare(b.place || ""); 
+            return (a.place || "").localeCompare(b.place || "");
         } else if (sortCriteria === "Organiser") {
-            return (a.organiser || "").localeCompare(b.organiser || "");  
-        } else if (sortCriteria === "RegisteredCompetitions") {
-            // First filter by RegisteredCompetitions, then sort by min_date and competition ID
-            const filteredByRegisteredCompetitions = filteredCompetitions.filter(competition => 
-                competition.min_date && competition.min_date > today
-            );
-
-            // Sort first by min_date, then by competition ID
-            return filteredByRegisteredCompetitions.sort((compA, compB) => {
-                // First by min_date comparison
-                if (compA.min_date !== compB.min_date) {
-                    return compA.min_date.localeCompare(compB.min_date);
-                }
-                // If min_date is equal, sort by competition ID
-                return compA.competition - compB.competition;
-            });
+            return (a.organiser || "").localeCompare(b.organiser || "");
         }
-        return 0;  // Default case if no criteria match
+        return 0;
     });
-
 
     const groupCategories = () => {
         const grouped = {};
@@ -203,16 +163,13 @@ function Competitions() {
         <div className="container mt-5">
             <h1>Versenyek</h1>
             <div className="mb-3 d-flex gap-2">
-                {/* Sort Dropdown */}
                 <Form.Select value={sortCriteria} onChange={e => setSortCriteria(e.target.value)}>
                     <option value="ID">ID szerint</option>
                     <option value="Name">Név szerint</option>
                     <option value="Place">Hely szerint</option>
                     <option value="Organiser">Szervező szerint</option>
-                    <option value="RegisteredCompetitions">Regisztrált Versenyek szerint</option>
                 </Form.Select>
 
-                {/* Category Dropdown with Grouping */}
                 <Form.Select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}>
                     <option value="All">Összes kategoria</option>
                     {Object.keys(groupedCategories).map(letter => (
@@ -227,13 +184,12 @@ function Competitions() {
                 </Form.Select>
             </div>
 
-            {/* Competition List */}
             <div className="row mt-3">
                 {sortedCompetitions.length > 0 ? (
                     sortedCompetitions.map((competition, index) => (
                         <div className="col-md-4 mb-3" key={`${competition.comp_id}-${index}`}>
                             <div className="card">
-                                <div className="card-header">ID: {competition.competition}</div>
+                                <div className="card-header">ID: {competition.comp_id}</div>
                                 <div className="card-body">
                                     <p><strong>Verseny: </strong> {competition.event_name}</p>
                                     <p><strong>Helyszin: </strong> {competition.place}</p>
@@ -243,24 +199,21 @@ function Competitions() {
                                     <p><strong>Dátum: </strong> {competition.start_date} - {competition.end_date}</p>
                                 </div>
                                 <div className="card-body d-flex justify-content-between">
-                                <Button
-                                    variant="primary"
-                                    onClick={() =>
-                                        handleModify(
-                                            competition.comp_id, 
-                                            competition.categid, 
-                                            competition.pid, 
-                                            competition.event_name, 
-                                            competition.min_entry, 
-                                            competition.max_entry, 
-                                            competition.start_date, 
-                                            competition.end_date
-                                        )
-                                    }
-                                    disabled={loadingModify[competition.comp_id]}
-                                >
-                                    {loadingModify[competition.comp_id] ? <Spinner animation="border" size="sm" /> : "Modify"}
-                                </Button>
+                                    <Button
+                                        variant="primary"
+                                        onClick={() => handleModify(competition.comp_id, competition.categid, {
+                                            event_name: competition.event_name,
+                                            categid: competition.category,
+                                            pid: competition.place,
+                                            min_entry: competition.min_entry,
+                                            max_entry: competition.max_entry,
+                                            start_date: competition.start_date,
+                                            end_date: competition.end_date,
+                                        })}
+                                        disabled={loadingModify[competition.comp_id]}
+                                    >
+                                        {loadingModify[competition.comp_id] ? <Spinner animation="border" size="sm" /> : "Modify"}
+                                    </Button>
                                     <Button
                                         variant="danger"
                                         onClick={() => handleDelete(competition.comp_id, competition.categid)}
@@ -276,6 +229,99 @@ function Competitions() {
                     <p>Versenyek nem találhatók.</p>
                 )}
             </div>
+
+            {/* Modal for Editing */}
+            <Modal show={showModal} onHide={handleModalClose}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Update Competition</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {editingComp ? (
+                        <Form>
+                            <Form.Group controlId="event_name">
+                                <Form.Label>Verseny</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={editingComp.event_name}
+                                    onChange={e => setEditingComp(prev => ({ ...prev, event_name: e.target.value }))} 
+                                />
+                            </Form.Group>
+                                 
+                            <Form.Group controlId="place">
+                                <Form.Label>Helyszin</Form.Label>
+                                <Form.Select
+                                    value={editingComp.place || ""}
+                                    onChange={e => setEditingComp(prev => ({ ...prev, place: e.target.value }))}
+                                >
+                                    <option value="">Válassz egy helyszint</option>
+                                    {helyszinLista.map(place => (
+                                        <option key={place.plac_id} value={place.place}>
+                                            {place.place}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+
+                            <Form.Group controlId="category">
+                                <Form.Label>Kategória</Form.Label>
+                                <Form.Select
+                                    value={editingComp.category || ""}
+                                    onChange={e => setEditingComp(prev => ({ ...prev, category: e.target.value }))}
+                                >
+                                    <option value="">Válassz egy kategóriát</option>
+                                    {categLista.map(category => (
+                                        <option key={category.categ_id} value={category.category}>
+                                            {category.category}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+
+                            <Form.Group controlId="min_entry">
+                                <Form.Label>Min Entry</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    value={editingComp.min_entry}
+                                    onChange={e => setEditingComp(prev => ({ ...prev, min_entry: e.target.value }))}
+                                />
+                            </Form.Group>
+
+                            <Form.Group controlId="max_entry">
+                                <Form.Label>Max Entry</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    value={editingComp.max_entry}
+                                    onChange={e => setEditingComp(prev => ({ ...prev, max_entry: e.target.value }))}
+                                />
+                            </Form.Group>
+
+                            <Form.Group controlId="start_date">
+                                <Form.Label>Start Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    value={editingComp.start_date}
+                                    onChange={e => setEditingComp(prev => ({ ...prev, start_date: e.target.value }))}
+                                />
+                            </Form.Group>
+
+                            <Form.Group controlId="end_date">
+                                <Form.Label>End Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    value={editingComp.end_date}
+                                    onChange={e => setEditingComp(prev => ({ ...prev, end_date: e.target.value }))}
+                                />
+                            </Form.Group>
+                        </Form>
+                    ) : (
+                        <p>Loading competition details...</p>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleModalClose}>Cancel</Button>
+                    <Button variant="primary" onClick={handleModifySave}>Save Changes</Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }

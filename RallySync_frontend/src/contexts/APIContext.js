@@ -13,6 +13,7 @@ export const APIProvider = ({ children }) => {
     const [statusLista, setSL] = useState([]); 
     const [userLista, setUL] = useState([]); 
     const [competitionLista, setCPL ] = useState([]);
+    const [permissionLista, setPML ] = useState([]);
 
     // Get competitions
     const getCompetitions = useCallback(async () => {
@@ -86,6 +87,19 @@ export const APIProvider = ({ children }) => {
         }
     }, []);
 
+    // Get permissions
+    const getPermissions = useCallback(async () => {
+        try {
+            await getCsrfToken();
+            const response = await myAxios.get("/api/permissionGet");
+            console.log(response.data);
+            setPML(response.data);
+        } catch (error) {
+            console.error("Error fetching status:", error.response?.data?.message);
+        }
+    }, []);
+
+    //get users
     const getUsers = useCallback(async () => {
         try {
             await getCsrfToken();
@@ -105,7 +119,8 @@ export const APIProvider = ({ children }) => {
         getStatus();
         getUsers();
         getCompetitions();
-    }, [getHelyszin, getKategoriak, getCars, getBrandtype, getStatus, getUsers, getCompetitions]);
+        getPermissions();
+    }, [getHelyszin, getKategoriak, getCars, getBrandtype, getStatus, getUsers, getCompetitions, getPermissions]);
 
     return (
         <APIContext.Provider value={{
@@ -116,13 +131,15 @@ export const APIProvider = ({ children }) => {
             statusLista,
             userLista,
             competitionLista, 
+            permissionLista,
             getHelyszin,
             getKategoriak,
             getCars,
             getBrandtype,
             getStatus,
             getUsers,
-            getCompetitions
+            getCompetitions,
+            getPermissions
         }}>
             {children}
         </APIContext.Provider>

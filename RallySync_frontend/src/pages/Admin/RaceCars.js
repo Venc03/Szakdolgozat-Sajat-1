@@ -1,26 +1,67 @@
 import React, { useContext, useState, useEffect } from "react";
-import { Button, InputGroup, FormControl, Spinner, Form } from "react-bootstrap";
+import { Button, InputGroup, FormControl, Spinner, Form, Modal } from "react-bootstrap";
 import APIContext from "../../contexts/APIContext";
 import { myAxios } from "../../api/myAxios";
 
 export default function RaceCars() {
-    const { carList, getCars } = useContext(APIContext);
+    const { carList, getCars, brandtypeLista, getBrandtype, categLista, getKategoriak, statusLista, getStatus } = useContext(APIContext);
     const [selectedID, setSelectedID] = useState("All");
     const [selectedBrand, setSelectedBrand] = useState("All");
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedStatus, setSelectedStatus] = useState("All");
     const [sortCriteria, setSortCriteria] = useState("ID");
-    const [loadingAdd, setLoadingAdd] = useState(false); // Loading state for add
-    const [loadingDelete, setLoadingDelete] = useState({}); // Loading state for delete
-    const [loadingModify, setLoadingModify] = useState({}); // Loading state for modify
-    const [carName, setCarName] = useState(""); // Car name state
-    const [categName, setCategName] = useState(""); // Category name state
-    const [statusName, setStatusName] = useState(""); // Status name state
+    const [loadingAdd, setLoadingAdd] = useState(false);
+    const [loadingDelete, setLoadingDelete] = useState({}); 
+    const [loadingModify, setLoadingModify] = useState({}); 
+    const [carName, setCarName] = useState(""); 
+    const [categName, setCategName] = useState(""); 
+    const [statusName, setStatusName] = useState(""); 
     const [loadingImage, setLoadingImage] = useState({});
+    const [showModal, setShowModal] = useState(false);
+    const [editingCar, setEditingCar] = useState(null);    
+    const [brandOptions, setBrandOptions] = useState([]);
+    const [categoryOptions, setCategoryOptions] = useState([]);
+    const [statusOptions, setStatusOptions] = useState([]);
 
     useEffect(() => {
         getCars();
-    }, [getCars]);
+        getBrandtype();
+        getKategoriak();
+        getStatus();
+    }, []);
+
+    useEffect(() => {
+        setBrandOptions(brandtypeLista.map(brand => brand.brandtype)); 
+    }, [brandtypeLista]);
+    
+    useEffect(() => {
+        setCategoryOptions(categLista.map(category => category.category)); 
+    }, [categLista]);
+    
+    useEffect(() => {
+        setStatusOptions(statusLista.map(status => status.statsus));
+    }, [statusLista]);
+
+    const getBrandId = (brandtype) => {
+        console.log("Looking for brand:", brandtype);
+        const brand = brandtypeLista.find(b => b.brandtype === brandtype);
+        console.log("Found brand:", brand);
+        return brand ? brand.bt_id : null;
+    };
+    
+    const getCategoryId = (category) => {
+        console.log("Looking for category:", category);
+        const cat = categLista.find(c => c.category === category);
+        console.log("Found category:", cat); 
+        return cat ? cat.categ_id : null;
+    };
+    
+    const getStatusId = (status) => {
+        console.log("Looking for status:", status);
+        const stat = statusLista.find(s => s.statsus === status);  
+        console.log("Found status:", stat); 
+        return stat ? stat.stat_id : null;  
+    };
 
     const filteredCars = carList.filter(car =>
         (selectedID === "All" || car.cid === selectedID) &&
@@ -68,7 +109,7 @@ export default function RaceCars() {
             setLoadingDelete(prev => ({ ...prev, [id]: true }));
 
             try {
-                await myAxios.delete(`/api/carDelete/${id}`); // Corrected delete URL
+                await myAxios.delete(`/api/carDelete/${id}`);
                 getCars();
             } catch (error) {
                 console.error("Error deleting the car:", error);
@@ -78,32 +119,52 @@ export default function RaceCars() {
         }
     };
 
-    // Handle Modify Car
-    const handleModify = async (id, oldBrandId, oldCategoryId, oldStatusId) => {
-        const newBrand = window.prompt("Enter new brand (current: " + oldBrandId + "):", oldBrandId);
-        const newCategory = window.prompt("Enter new category (current: " + oldCategoryId + "):", oldCategoryId);
-        const newStatus = window.prompt("Enter new status (current: " + oldStatusId + "):", oldStatusId);
+    // Open Modify Modal
+    const openModifyModal = (car) => {
+        setEditingCar({ ...car });
+        setShowModal(true);
+    };
+
+    // Handle Modify Save
+    const handleModifySave = async () => {
+        if (!editingCar) return;
     
-        if (!newBrand.trim() || !newCategory.trim() || !newStatus.trim()) {
-            alert("Brand, Category, and Status cannot be empty.");
+        const { brandtype, category, status } = editingCar;
+
+        console.log("Editing Car:", editingCar);
+
+        if (!brandtype || !category || !status) {
+            alert("Minden mezőt ki kell tölteni! (You must fill all fields)");
             return;
         }
-
-        setLoadingModify(prev => ({ ...prev, [id]: true }));
-     
+    
+        const brandId = getBrandId(brandtype);
+        const categoryId = getCategoryId(category);
+        const statusId = getStatusId(status);
+    
+        console.log("Mapped Car Data:", { brandId, categoryId, statusId });
+    
+        if (!brandId || !categoryId || !statusId) {
+            alert("Invalid data. Please ensure all fields are properly selected.");
+            return;
+        }
+    
+        const carData = {
+            brandtype: brandId, 
+            category: categoryId, 
+            status: statusId,
+        };
+    
         try {
-            await myAxios.patch(`/api/carModify/${id}`, {
-                brandtype: newBrand.trim(),
-                category: newCategory.trim(),
-                statsus: newStatus.trim(),
-            });
+            const response = await myAxios.patch(`/api/carModify/${editingCar.cid}`, carData);
+            console.log("Car modified successfully:", response.data);
             getCars();
+            setShowModal(false);
         } catch (error) {
-            console.error("Error modifying the car:", error);
-        } finally {
-            setLoadingModify(prev => ({ ...prev, [id]: false }));
+            console.error("Error modifying the car:", error.response?.data);
         }
     };
+    
 
     // Handle Image Upload
     const handleImageUpload = async (carId, file) => {
@@ -132,6 +193,7 @@ export default function RaceCars() {
             setLoadingImage(prev => ({ ...prev, [carId]: false }));
         }
     };
+
 
     return (
         <div className="container mt-5">
@@ -250,10 +312,10 @@ export default function RaceCars() {
                                 <div className="card-body d-flex justify-content-between">
                                     <Button 
                                         variant="primary" 
-                                        onClick={() => handleModify(car.cid, car.btid, car.categid, car.statid)} 
+                                        onClick={() => openModifyModal(car)}
                                         disabled={loadingModify[car.cid]}>
                                         {loadingModify[car.cid] ? <Spinner as="span" animation="border" size="sm" /> : 'Módosítás'}
-                                    </Button>
+                                    </Button>            
                                     <Button 
                                         variant="danger" 
                                         onClick={() => handleDelete(car.cid)} 
@@ -268,6 +330,77 @@ export default function RaceCars() {
                     <p>Nincs található autó!</p>
                 )}
             </div>
+
+            {/* Modify Car Modal */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Autó módosítása</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {editingCar && (
+                        <Form>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Márka</Form.Label>
+                                <Form.Select
+                                    value={editingCar?.brandtype || ""}
+                                    onChange={e => {
+                                        setEditingCar(prev => ({ ...prev, brandtype: e.target.value }));
+                                    }}
+                                >
+                                    <option value="">Válassz egy márkát</option>
+                                    {brandtypeLista.map(b => (
+                                        <option key={b.bt_id} value={b.brandtype}>
+                                            {b.brandtype}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                                
+                            <Form.Group className="mb-3">
+                                <Form.Label>Kategória</Form.Label>
+                                <Form.Select
+                                    value={editingCar?.category || ""}
+                                    onChange={e => {
+                                        setEditingCar(prev => ({ ...prev, category: e.target.value }));
+                                    }}
+                                >
+                                    <option value="">Válassz egy kategóriát</option>
+                                    {categLista.map(category => (
+                                        <option key={category.categ_id} value={category.category}>
+                                            {category.category}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                                
+                            <Form.Group className="mb-3">
+                                <Form.Label>Státusz</Form.Label>
+                                <Form.Select
+                                    value={editingCar?.statsus || ""}
+                                    onChange={e => {
+                                        setEditingCar(prev => ({ ...prev, statsus: e.target.value }));
+                                    }}
+                                >
+                                    <option value="">Válassz egy státuszt</option>
+                                    {statusLista.map(status => (
+                                        <option key={status.stat_id} value={status.statsus}>
+                                            {status.statsus}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Form>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowModal(false)}>
+                        Mégse
+                    </Button>
+                    <Button variant="success" onClick={handleModifySave} disabled={loadingModify[editingCar?.cid]}>
+                        {loadingModify[editingCar?.cid] ? <Spinner as="span" animation="border" size="sm" /> : "Módosítás"}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 }

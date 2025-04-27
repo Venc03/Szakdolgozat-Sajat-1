@@ -8,6 +8,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CompcategController;
 use App\Http\Controllers\CompeetController;
 use App\Http\Controllers\CompetitionController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PlaceController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UserController;
@@ -28,8 +29,8 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
 
     route::get("/competitionGet", [CompetitionController::class, "index"]);
     route::get("/competition/{id}", [CompetitionController::class, "show"]);
-    Route::patch('/competitionModify/{competitionId}/{ccccategoryId}', [CompetitionController::class, 'update']);
-    Route::delete('/competitionDelete/{competitionId}/{ccccategoryId}', [CompetitionController::class, 'destroy']);
+    Route::patch('/competitionModify/{competitionId}/{categoryId}', [CompetitionController::class, 'update']);
+    Route::delete('/competitionDelete/{competitionId}/{categoryId}', [CompetitionController::class, 'destroy']);
     route::get("/compcategs", [CompcategController::class, "index"]);
     route::get("/compcateg/{id}", [CompcategController::class, "show"]);
     Route::patch('/compcategUpdate/{id}', [CompcategController::class, 'update']);
@@ -54,9 +55,6 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
     Route::post('/statusCreate', [StatusController::class, 'store']);
     Route::patch('/statusModify/{id}', [StatusController::class, 'update']);
     Route::delete('/statusDelete/{id}', [StatusController::class, 'destroy']);
-    Route::get('/registeredRaces', [CompetitionController::class, 'registeredRaces']);
-    Route::get('/tookPart', [CompeetController::class, 'tookPart']);
-    Route::get('/carsAccordingToCategory', [CarController::class, 'carsAccordingToCategory']);
     Route::patch('/userAdminModify/{id}', [UserController::class, 'adminUpdate']);
 });
 
@@ -68,6 +66,7 @@ Route::middleware(['auth:sanctum', Competitor::class])->group(function () {
 
 });
 
+Route::get('/permissionGet', [PermissionController::class, 'index']);
 Route::get('/userGet', [UserController::class, 'index']);
 Route::post('/users', [UserController::class, 'store']);
 Route::get('/users/{id}', [UserController::class, 'show']);

@@ -31,7 +31,7 @@ class CompetitionController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created comp.
      */
     public function store(Request $request)
 {
@@ -51,7 +51,7 @@ class CompetitionController extends Controller
 }
 
     /**
-     * Display the specified resource.
+     * Display the specified comp.
      */
     public function show(string $id)
     {
@@ -65,59 +65,69 @@ class CompetitionController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified comp.
      */
     public function update(Request $request, $competitionId, $categoryId)
-{
-    try {
-        // Validate input data
-        $validated = $request->validate([
-            'event_name' => 'required|string',
-            'categid' => 'required|integer|exists:categories,categ_id',
-            'pid' => 'required|integer|exists:places,plac_id',
-            'min_entry' => 'required|integer|min:0',
-            'max_entry' => 'required|integer|min:' . $request->input('min_entry'),
-            'start_date' => 'required|date',
-            'end_date' => 'required|date',
-        ]);
-
-        // Update the competition itself
-        $competition = Competition::findOrFail($competitionId);
-        $competition->update([
-            'event_name' => $validated['event_name'],
-            'place' => $validated['pid'],
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-        ]);
-
-        // Delete the old compcateg record
-        $compcateg = Compcateg::where([
-            ['competition', '=', $competitionId],
-            ['category', '=', $categoryId],
-        ])->first();
-
-        if ($compcateg) {
-            $compcateg->delete(); // Delete the old record
+    {
+        try {
+            // Validate input data
+            $validated = $request->validate([
+                'event_name' => 'required|string',
+                'categid' => 'required|integer|exists:categories,categ_id',
+                'pid' => 'required|integer|exists:places,plac_id',
+                'min_entry' => 'required|integer|min:0',
+                'max_entry' => 'required|integer|min:' . $request->input('min_entry'),
+                'start_date' => 'required|date',
+                'end_date' => 'required|date',
+            ]);
+    
+            // Use DB transaction to ensure atomicity
+            DB::beginTransaction();
+    
+            // Update the competition itself
+            $competition = Competition::findOrFail($competitionId);
+            $competition->update([
+                'event_name' => $validated['event_name'],
+                'place' => $validated['pid'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+            ]);
+    
+            // Delete the old compcateg record
+            $compcateg = Compcateg::where([
+                ['competition', '=', $competitionId],
+                ['category', '=', $categoryId],
+            ])->first();
+    
+            if ($compcateg) {
+                $compcateg->delete(); // Delete the old record
+            }
+    
+            // Create a new compcateg entry with the updated category
+            $newCompcateg = new Compcateg();
+            $newCompcateg->competition = $competitionId;
+            $newCompcateg->category = $validated['categid'];  
+            $newCompcateg->min_entry = $validated['min_entry'];
+            $newCompcateg->max_entry = $validated['max_entry'];
+            $newCompcateg->save();
+    
+            // Commit the transaction
+            DB::commit();
+    
+            return response()->json(['message' => 'Competition updated successfully'], 200);
+        } catch (\Exception $e) {
+            // Rollback the transaction if something goes wrong
+            DB::rollBack();
+    
+            // Log any errors
+            Log::error('Error updating competition: ' . $e->getMessage(), [
+                'competitionId' => $competitionId,
+                'categoryId' => $categoryId
+            ]);
+    
+            return response()->json(['message' => 'An error occurred while updating the competition.'], 500);
         }
-
-        // Create a new compcateg entry with the updated category
-        $newCompcateg = new Compcateg();
-        $newCompcateg->competition = $competitionId;
-        $newCompcateg->category = $validated['categid'];  // New category ID
-        $newCompcateg->min_entry = $validated['min_entry'];
-        $newCompcateg->max_entry = $validated['max_entry'];
-        $newCompcateg->save();
-
-        return response()->json(['message' => 'Competition updated successfully'], 200);
-    } catch (\Exception $e) {
-        // Log any errors
-        Log::error('Error updating competition: ' . $e->getMessage(), [
-            'competitionId' => $competitionId,
-            'categoryId' => $categoryId
-        ]);
-        return response()->json(['message' => 'An error occurred while updating the competition.'], 500);
     }
-}
 
 
 public function destroy($competitionId, $categoryId)

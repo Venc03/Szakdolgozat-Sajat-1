@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,7 +51,12 @@ class UserController extends Controller
     public function show(string $id)
     {
         $user = User::find($id);
-        return $user ? response()->json($user) : response()->json(['message' => 'User not found'], 404);
+        return DB::select('
+        SELECT u.id, u.name, u.email, p.permission, u.image
+        FROM users u
+        INNER JOIN permissions p ON u.permission = p.perm_id
+        WHERE u.id = ?', [$id]
+        );
     }
 
     /**
@@ -77,21 +83,26 @@ class UserController extends Controller
      * Admin Update - Change name and permission.
      */
     public function adminUpdate(Request $request, string $id)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'permission' => 'required|string'
-        ]);
+{
+    $user = User::find($id); 
 
-        $user = User::find($id);
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-
-        $user->update($validated);
-
-        return response()->json(['message' => 'User updated successfully']);
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
     }
+
+
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'permission' => 'required|integer|exists:permissions,perm_id'
+    ]);
+
+    $user->name = $validated['name'];
+    $user->permission = $validated['permission'];
+
+    $user->save();
+
+    return response()->json(['message' => 'User updated successfully']);
+}
 
     /**
      * Delete a user.

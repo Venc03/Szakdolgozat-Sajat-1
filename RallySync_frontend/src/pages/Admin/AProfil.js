@@ -1,12 +1,13 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import useAuthContext from "../../contexts/AuthContext";
 import { Button, Spinner, Form } from "react-bootstrap";
 import { getCsrfToken, myAxios } from "../../api/myAxios";
 import APIContext from "../../contexts/APIContext";
+import { Modal } from "react-bootstrap";
 
 function AProfil() {
     const { user, setUser } = useAuthContext();
-    const { userLista, getUsers } = useContext(APIContext);
+    const { userLista, getUsers, permissionLista, getPermissions} = useContext(APIContext);
     const [loadingModify, setLoadingModify] = useState({});
     const [loadingDelete, setLoadingDelete] = useState({});
     const [error, setError] = useState("");
@@ -15,57 +16,63 @@ function AProfil() {
     const [selectedName, setSelectedName] = useState("All");
     const [selectedPermission, setSelectedPermission] = useState("All");
     const [loadingImage, setLoadingImage] = useState({});
+    const [editingUser, setEditingUser] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [permissionOptions, setPermissionOptions] = useState([]);
 
-    const handleModify = async (id, oldName) => {
-        const newName = window.prompt("Enter new user name:", oldName);
-        if (!newName || newName.trim() === "") {
-            window.alert("The user name cannot be empty.");
+        useEffect(() => {
+            getPermissions();
+        }, []);
+
+       useEffect(() => {
+            setPermissionOptions(permissionLista.map(perm => perm.permission)); 
+        }, [permissionLista]);
+
+        const getPermId = (permission) => {
+            console.log("Looking for permissions:", permission);
+            const perm = permissionLista.find(p => p.permission === permission);
+            console.log("Found permission:", perm);
+            return perm ? perm.perm_id : null;
+        };
+
+    // Handle Modify Save
+    const handleModifySave = async () => {
+        if (!editingUser) return;
+    
+        const { permission } = editingUser;
+
+        console.log("Editing User:", editingUser);
+
+        if (!permission) {
+            alert("Minden mezőt ki kell tölteni! (You must fill all fields)");
             return;
         }
     
-        setLoadingModify(prev => ({ ...prev, [id]: true }));
-        setError("");
+        const permId = getPermId(permission);
+    
+        console.log("Mapped User Data:", { permId });
+    
+        if (!permId) {
+            alert("Invalid data. Please ensure all fields are properly selected.");
+            return;
+        }
+    
+        const userData = {
+            name: editingUser.name,
+            permission: permId, 
+        };
     
         try {
-            await getCsrfToken();
-            await myAxios.patch(`/api/userModify/${id}`, { name: newName.trim() });
+            const response = await myAxios.patch(`/api/userAdminModify/${editingUser.id}`, userData);
+            console.log("User modified successfully:", response.data);
             getUsers();
-    
-            if (user.id === id) {
-                setUser(prev => ({ ...prev, name: newName.trim() }));
-            }
+            setShowModal(false);
         } catch (error) {
-            console.error("Error modifying the username:", error.response?.data?.message);
-            setError("There was an error modifying the username.");
-        } finally {
-            setLoadingModify(prev => ({ ...prev, [id]: false }));
-        }
-    };
-    
-    const handleAdminModify = async (id, oldName, oldPermission) => {
-        const newName = window.prompt("Enter new User name (current: " + oldName + "):", oldName);
-        const newPermission = window.prompt("Enter new User permission (current: " + oldPermission + "):", oldPermission);
-
-        if (!newName.trim() || !newPermission.trim()) {
-            alert("User and permission cannot be empty.");
-            return;
-        }
-
-        setLoadingModify(prev => ({ ...prev, [id]: true }));
-
-        try {
-            await myAxios.patch(`/api/userAdminModify/${id}`, {
-                name: newName.trim(),
-                permission: newPermission.trim(),
-            });
-            getUsers(); 
-        } catch (error) {
-            console.error("Error modifying the user:", error.response?.data?.message);
-        } finally {
-            setLoadingModify(prev => ({ ...prev, [id]: false }));
+            console.error("Error modifying the user:", error.response?.data);
         }
     };
 
+    // Handle Delete
     const handleDelete = async id => {
         if (window.confirm("Are you sure you want to delete this User?")) {
             setLoadingDelete(prev => ({ ...prev, [id]: true }));
@@ -74,7 +81,7 @@ function AProfil() {
             try {
                 await getCsrfToken();
                 await myAxios.delete(`/api/userDelete/${id}`);
-                getUsers(); 
+                getUsers();
             } catch (error) {
                 console.error("Error deleting the User:", error.response?.data?.message);
                 setError("There was an error deleting the user.");
@@ -85,32 +92,37 @@ function AProfil() {
     };
 
     // Handle Image Upload
-        const handleImageUpload = async (Id, file) => {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('id', Id);
-        
-            setLoadingImage(prev => ({ ...prev, [Id]: true }));
-        
-            try {
-                const response = await myAxios.post("/api/userUploadImage", formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
-        
-                if (response.data.success) {
-                    console.log("Image uploaded successfully:", response.data.image_url);
-                    getUsers(); 
-                } else {
-                    console.error("Image upload failed:", response.data.message);
-                }
-            } catch (error) {
-                console.error("Error uploading image:", error);
-            } finally {
-                setLoadingImage(prev => ({ ...prev, [Id]: false }));
+    const handleImageUpload = async (Id, file) => {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('id', Id);
+    
+        setLoadingImage(prev => ({ ...prev, [Id]: true }));
+    
+        try {
+            const response = await myAxios.post("/api/userUploadImage", formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+    
+            if (response.data.success) {
+                console.log("Image uploaded successfully:", response.data.image_url);
+                getUsers(); 
+            } else {
+                console.error("Image upload failed:", response.data.message);
             }
-        };
+        } catch (error) {
+            console.error("Error uploading image:", error);
+        } finally {
+            setLoadingImage(prev => ({ ...prev, [Id]: false }));
+        }
+    };
+
+    const openModifyModal = (user) => {
+        setEditingUser({ ...user });
+        setShowModal(true);
+    };
 
     // Filtered and sorted users
     const filteredUsers = userLista.filter(user => 
@@ -130,6 +142,8 @@ function AProfil() {
         return 0;
     });
 
+    const usersWithoutLoggedIn = sortedUsers.filter(u => u.id !== user.id);
+
     return (
         <div className="container mt-5">
             <h1>Profil</h1>
@@ -137,7 +151,6 @@ function AProfil() {
                 <div className="card-header d-flex justify-content-center align-items-center">
                     <h3>Info:</h3>
                 </div>
-                {/* Image or Upload Button */}
                 <div className="card-body text-center">
                     {user.image ? (
                         <div className="d-flex flex-column">
@@ -173,7 +186,6 @@ function AProfil() {
                         </Button>
                     )}
 
-                    {/* Hidden File Input */}
                     <input
                         type="file"
                         id={`file-input-${user.id}`}
@@ -183,13 +195,16 @@ function AProfil() {
                     />
                 </div>
                 <ul className="list-group list-group-flush">
-                    <li className="list-group-item">{user.name}</li>
-                    <li className="list-group-item">{user.email}</li>
-                    <li className="list-group-item">{user.permission}</li>
+                    <li className="list-group-item"><strong>Username: </strong>{user.name}</li>
+                    <li className="list-group-item"><strong>User email: </strong>{user.email}</li>
+                    <li className="list-group-item"><strong>Permission: </strong>{user.permission}</li>
                     <li className="list-group-item d-flex justify-content-center align-items-center">
                         <Button
                             variant="primary"
-                            onClick={() => handleModify(user.id, user.name)}
+                            onClick={() => {
+                                setEditingUser(user);
+                                setShowModal(true);
+                            }}
                             disabled={loadingModify[user.id]}
                         >
                             {loadingModify[user.id] ? <Spinner animation="border" size="sm" /> : "Módosítás"}
@@ -198,31 +213,79 @@ function AProfil() {
                 </ul>
             </div>
 
+            {/* Modify User Modal */}
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Felhasználó módosítása</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {editingUser && (
+                        <Form>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Felhasználónév</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={editingUser?.name || ""}
+                                    onChange={e => {
+                                        setEditingUser(prev => ({ ...prev, name: e.target.value }));
+                                    }}
+                                />
+                            </Form.Group>
+
+                            <Form.Group className="mb-3">
+                                <Form.Label>Permission</Form.Label>
+                                <Form.Select
+                                    value={editingUser?.permission || ""}
+                                    onChange={e => {
+                                        setEditingUser(prev => ({ ...prev, permission: e.target.value }));
+                                    }}
+                                >
+                                    <option value="">Válassz egy státuszt</option>
+                                    {permissionOptions.map(permission => (
+                                        <option key={permission} value={permission}>
+                                            {permission}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Form>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowModal(false)}>
+                        Mégse
+                    </Button>
+                    <Button variant="success" onClick={handleModifySave} disabled={loadingModify[editingUser?.id]}>
+                        {loadingModify[editingUser?.id] ? <Spinner as="span" animation="border" size="sm" /> : "Módosítás"}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
             {/* Filters and Sorting */}
             <div className="card-header d-flex justify-content-center align-items-center">
                 <h3>Users:</h3>
             </div>
             <div className="mb-3 d-flex gap-2">
-                    {/* Sort Dropdown */}
-                    <Form.Select value={sortCriteria} onChange={e => setSortCriteria(e.target.value)}>
-                        <option value="ID">ID szerint</option>
-                        <option value="Name">Név szerint</option>
-                        <option value="Permission">Permission szerint</option>
-                    </Form.Select>
+                {/* Sort Dropdown */}
+                <Form.Select value={sortCriteria} onChange={e => setSortCriteria(e.target.value)}>
+                    <option value="ID">ID szerint</option>
+                    <option value="Name">Név szerint</option>
+                    <option value="Permission">Permission szerint</option>
+                </Form.Select>
 
-                    {/* Permission filter */}
-                    <Form.Select value={selectedPermission} onChange={e => setSelectedPermission(e.target.value)}>
-                        <option value="All">Permission szűrő</option>
-                        {[...new Set(userLista.map(user => user.permission))].map(permission => (
-                            <option key={permission} value={permission}>{permission}</option>
-                        ))}
-                    </Form.Select>
-                </div>
+                {/* Permission filter */}
+                <Form.Select value={selectedPermission} onChange={e => setSelectedPermission(e.target.value)}>
+                    <option value="All">Permission szűrő</option>
+                    {[...new Set(userLista.map(user => user.permission))].map(permission => (
+                        <option key={permission} value={permission}>{permission}</option>
+                    ))}
+                </Form.Select>
+            </div>
 
             {/* Users List */}
             <div className="row mt-3">
-                {sortedUsers.length > 0 ? (
-                    sortedUsers.map((user, index) => (
+                {usersWithoutLoggedIn.length > 0 ? (
+                    usersWithoutLoggedIn.map((user, index) => (
                         <div className="col-md-4 mb-3" key={user.id || index}>
                             <div className="card">
                                 <div className="card-header">ID: {user.id}</div>
@@ -231,13 +294,15 @@ function AProfil() {
                                         <strong>User: </strong> {user.name}
                                     </p>
                                     <p>
-                                        <strong>permission: </strong> {user.permission} 
+                                        <strong>permission: </strong> {user.permission}
                                     </p>
                                 </div>
                                 <div className="card-body d-flex justify-content-between">
                                     <Button
                                         variant="primary"
-                                        onClick={() => handleAdminModify(user.id, user.name, user.permission)}
+                                        onClick={() => {
+                                            openModifyModal(user);
+                                        }}
                                         disabled={loadingModify[user.id]}
                                     >
                                         {loadingModify[user.id] ? <Spinner animation="border" size="sm" /> : "Módosítás"}
@@ -254,7 +319,7 @@ function AProfil() {
                         </div>
                     ))
                 ) : (
-                    <p>Nem található users!</p>
+                    <p>Felhasználó nem található</p>
                 )}
             </div>
         </div>

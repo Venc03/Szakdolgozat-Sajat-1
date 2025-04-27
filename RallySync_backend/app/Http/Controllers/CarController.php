@@ -25,7 +25,7 @@ class CarController extends Controller
     public function index()
     {
         return DB::select('
-            SELECT cs.cid, bt.bt_id AS btid, ca.categ_id AS categid, ss.stat_id AS statid, bt.brandtype, ca.category, ss.statsus, cs.image
+            SELECT cs.cid, bt.bt_id AS btid, ca.categ_id AS categid, ss.stat_id AS statid, bt.brandtype, ca.category, ss.statsus, cs.image, cs.brandtype as car_brandtype, cs.category as car_category, cs.status as car_status
             FROM cars cs
             INNER JOIN brandtypes bt ON cs.brandtype = bt.bt_id
             INNER JOIN categories ca ON cs.category = ca.categ_id
@@ -103,17 +103,30 @@ class CarController extends Controller
 {
     $record = Car::find($id);
     if ($record) {
-        $record->brandtype = $request->input('brandtype');
-        $record->category = $request->input('category');
-        $record->status = $request->input('statsus');
+        $validated = $request->validate([
+            'brandtype' => 'required|integer|exists:brandtypes,bt_id',
+            'category' => 'required|integer|exists:categories,categ_id',
+            'status' => 'required|integer|exists:statuses,stat_id',
+        ]);
+
+        $record->brandtype = $validated['brandtype'];
+        $record->category = $validated['category'];
+        $record->status = $validated['status'];
+
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $fileName = $id . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path('cars'), $fileName);
+            $record->image = asset('cars/' . $fileName);
+        }
 
         $record->save();
+
         return response()->json(['message' => 'Car updated successfully']);
     }
 
     return response()->json(['message' => 'Car not found'], 404);
 }
-
 
 
     /**
