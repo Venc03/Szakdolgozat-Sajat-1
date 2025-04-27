@@ -144,6 +144,11 @@ function AProfil() {
 
     const usersWithoutLoggedIn = sortedUsers.filter(u => u.id !== user.id);
 
+    const getPermissionName = (permissionId) => {
+        const permission = permissionLista.find(p => p.perm_id === permissionId);
+        return permission ? permission.permission : "Unknown Permission"; // Return "Unknown Permission" if not found
+    };
+
     return (
         <div className="container mt-5">
             <h1>Profil</h1>
@@ -197,7 +202,7 @@ function AProfil() {
                 <ul className="list-group list-group-flush">
                     <li className="list-group-item"><strong>Username: </strong>{user.name}</li>
                     <li className="list-group-item"><strong>User email: </strong>{user.email}</li>
-                    <li className="list-group-item"><strong>Permission: </strong>{user.permission}</li>
+                    <li className="list-group-item"><strong>Permission: </strong>{getPermissionName(user.permission)}</li>
                     <li className="list-group-item d-flex justify-content-center align-items-center">
                         <Button
                             variant="primary"
