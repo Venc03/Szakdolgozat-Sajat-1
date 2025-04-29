@@ -146,7 +146,7 @@ function AProfil() {
 
     const getPermissionName = (permissionId) => {
         const permission = permissionLista.find(p => p.perm_id === permissionId);
-        return permission ? permission.permission : "Unknown Permission"; // Return "Unknown Permission" if not found
+        return permission ? permission.permission : "Unknown Permission"; 
     };
 
     return (
@@ -158,7 +158,7 @@ function AProfil() {
                 </div>
                 <div className="card-body text-center">
                     {user.image ? (
-                        <div className="d-flex flex-column">
+                        <div className="d-flex flex-column align-items-center">
                             <img
                                 src={user.image}
                                 alt={`User image: ${user.name}`}
@@ -294,14 +294,55 @@ function AProfil() {
                         <div className="col-md-4 mb-3" key={user.id || index}>
                             <div className="card">
                                 <div className="card-header">ID: {user.id}</div>
-                                <div className="card-body">
-                                    <p>
-                                        <strong>User: </strong> {user.name}
-                                    </p>
-                                    <p>
-                                        <strong>permission: </strong> {user.permission}
-                                    </p>
+                                <div className="card-body text-center">
+                                    {user.image ? (
+                                        <div className="d-flex flex-column align-items-center">
+                                            <img
+                                                src={user.image}
+                                                alt={`User image: ${user.name}`}
+                                                className="img-fluid mb-2"
+                                                style={{ maxHeight: "150px" }}
+                                            />
+                                            <Button
+                                                variant="primary"
+                                                onClick={() => document.getElementById(`file-input-${user.id}`).click()}
+                                                disabled={loadingImage[user.id]}
+                                            >
+                                                {loadingImage[user.id] ? (
+                                                    <Spinner as="span" animation="border" size="sm" />
+                                                ) : (
+                                                    "Kép megváltoztatása"
+                                                )}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Button
+                                            variant="warning"
+                                            onClick={() => document.getElementById(`file-input-${user.id}`).click()}
+                                            disabled={loadingImage[user.id]}
+                                        >
+                                            {loadingImage[user.id] ? (
+                                                <Spinner as="span" animation="border" size="sm" />
+                                            ) : (
+                                                "Kép hozzáadása"
+                                            )}
+                                        </Button>
+                                    )}
+                                
+                                    <input
+                                        type="file"
+                                        id={`file-input-${user.id}`}
+                                        style={{ display: "none" }}
+                                        accept="image/*"
+                                        onChange={e => handleImageUpload(user.id, e.target.files[0])}
+                                    />
                                 </div>
+                                
+                                <div className="card-body">
+                                    <p><strong>User: </strong> {user.name}</p>
+                                    <p><strong>permission: </strong> {user.permission}</p>
+                                </div>
+
                                 <div className="card-body d-flex justify-content-between">
                                     <Button
                                         variant="primary"

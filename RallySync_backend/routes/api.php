@@ -29,8 +29,8 @@ Route::middleware(['auth:sanctum', Admin::class])->group(function () {
 
     route::get("/competitionGet", [CompetitionController::class, "index"]);
     route::get("/competition/{id}", [CompetitionController::class, "show"]);
-    Route::patch('/competitionModify/{competitionId}/{categoryId}', [CompetitionController::class, 'update']);
-    Route::delete('/competitionDelete/{competitionId}/{categoryId}', [CompetitionController::class, 'destroy']);
+    Route::patch('/competitionModify/{coca_id}', [CompetitionController::class, 'update']);
+    Route::delete('/competitionDelete/{coca_id}', [CompetitionController::class, 'destroy']);
     route::get("/compcategs", [CompcategController::class, "index"]);
     route::get("/compcateg/{id}", [CompcategController::class, "show"]);
     Route::patch('/compcategUpdate/{id}', [CompcategController::class, 'update']);

@@ -127,43 +127,45 @@ export default function RaceCars() {
 
     // Handle Modify Save
     const handleModifySave = async () => {
-        if (!editingCar) return;
-    
-        const { brandtype, category, status } = editingCar;
+    if (!editingCar) return;
 
-        console.log("Editing Car:", editingCar);
+    const { brandtype, category, statsus } = editingCar;
 
-        if (!brandtype || !category || !status) {
-            alert("Minden mezőt ki kell tölteni! (You must fill all fields)");
-            return;
-        }
-    
-        const brandId = getBrandId(brandtype);
-        const categoryId = getCategoryId(category);
-        const statusId = getStatusId(status);
-    
-        console.log("Mapped Car Data:", { brandId, categoryId, statusId });
-    
-        if (!brandId || !categoryId || !statusId) {
-            alert("Invalid data. Please ensure all fields are properly selected.");
-            return;
-        }
-    
-        const carData = {
-            brandtype: brandId, 
-            category: categoryId, 
-            status: statusId,
-        };
-    
-        try {
-            const response = await myAxios.patch(`/api/carModify/${editingCar.cid}`, carData);
-            console.log("Car modified successfully:", response.data);
-            getCars();
-            setShowModal(false);
-        } catch (error) {
-            console.error("Error modifying the car:", error.response?.data);
-        }
+    console.log("Editing Car:", editingCar);
+
+    const { image, ...rest } = editingCar;
+    if (Object.values(rest).some(value => value === null || value === '')) {
+        alert("Minden mezőt ki kell tölteni!");
+        return;
+    }
+
+    const brandId = getBrandId(brandtype);
+    const categoryId = getCategoryId(category);
+    const statusId = getStatusId(statsus);
+
+    console.log("Mapped Car Data:", { brandId, categoryId, statusId });
+
+    if (!brandId || !categoryId || !statusId) {
+        alert("Invalid data. Please ensure all fields are properly selected.");
+        return;
+    }
+
+    const carData = {
+        brandtype: brandId,
+        category: categoryId,
+        status: statusId,
     };
+
+    try {
+        const response = await myAxios.patch(`/api/carModify/${editingCar.cid}`, carData);
+        console.log("Car modified successfully:", response.data);
+        getCars();
+        setShowModal(false);
+    } catch (error) {
+        console.error("Error modifying the car:", error.response?.data);
+    }
+};
+
     
 
     // Handle Image Upload

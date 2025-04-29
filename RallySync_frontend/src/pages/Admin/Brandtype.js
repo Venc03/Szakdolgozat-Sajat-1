@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Button, InputGroup, FormControl, Spinner } from "react-bootstrap";
-import { APIContext } from '../../contexts/APIContext'; // Assuming APIContext is imported correctly
+import { APIContext } from '../../contexts/APIContext'; 
 import { getCsrfToken, myAxios } from '../../api/myAxios';
 
 export default function Brandtype() {
@@ -82,7 +82,7 @@ export default function Brandtype() {
     return (
         <div className="container mt-5">
             <div className="container">
-                <h1>Brandtypes</h1>
+                <h1>Márka Típus</h1>
                 <InputGroup className="mb-3" style={{ width: '300px' }}>
                     <FormControl
                         placeholder="New Brandtype Name"
@@ -92,7 +92,7 @@ export default function Brandtype() {
                     />
                 </InputGroup>
                 <Button variant="warning" onClick={handleAdd} disabled={loadingAdd}>
-                    {loadingAdd ? <Spinner animation="border" size="sm" /> : "Add Brandtype"}
+                    {loadingAdd ? <Spinner animation="border" size="sm" /> : "Márka típus hozzáadás"}
                 </Button>
             </div>
 

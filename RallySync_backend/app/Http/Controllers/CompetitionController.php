@@ -20,7 +20,7 @@ class CompetitionController extends Controller
     public function index()
     {
         return DB::select('
-        SELECT c.comp_id, c.event_name, c.place as pid, p.place, o.name as organiser, 
+        SELECT c.comp_id, c.event_name, c.place as pid, p.place, o.name as organiser, cc.coca_id,
         c.description, cc.min_entry, cc.max_entry, ctg.category, cc.category as categid, cc.competition, c.start_date, c.end_date
         FROM competitions c
         INNER JOIN users o ON c.organiser = o.id
@@ -67,12 +67,14 @@ class CompetitionController extends Controller
     /**
      * Update the specified comp.
      */
-    public function update(Request $request, $competitionId, $categoryId)
+    public function update(Request $request, $CocaId)
     {
         try {
             // Validate input data
             $validated = $request->validate([
+                'coca_id' => 'required|integer|exists:compcategs,coca_id',
                 'event_name' => 'required|string',
+                'comp_id' => 'required|integer|exists:competitions,comp_id',
                 'categid' => 'required|integer|exists:categories,categ_id',
                 'pid' => 'required|integer|exists:places,plac_id',
                 'min_entry' => 'required|integer|min:0',
@@ -81,11 +83,10 @@ class CompetitionController extends Controller
                 'end_date' => 'required|date',
             ]);
     
-            // Use DB transaction to ensure atomicity
             DB::beginTransaction();
     
-            // Update the competition itself
-            $competition = Competition::findOrFail($competitionId);
+            // Update the competition
+            $competition = Competition::findOrFail($validated['comp_id']);
             $competition->update([
                 'event_name' => $validated['event_name'],
                 'place' => $validated['pid'],
@@ -93,76 +94,75 @@ class CompetitionController extends Controller
                 'end_date' => $validated['end_date'],
             ]);
     
-            // Delete the old compcateg record
-            $compcateg = Compcateg::where([
-                ['competition', '=', $competitionId],
-                ['category', '=', $categoryId],
-            ])->first();
-    
-            if ($compcateg) {
-                $compcateg->delete(); // Delete the old record
+            // Update the compcateg entry
+            $existing = Compcateg::where('competition', $validated['comp_id'])
+            ->where('category', $validated['categid'])
+            ->where('coca_id', '!=', $validated['coca_id'])
+            ->first();
+
+            if ($existing) {
+            return response()->json([
+                'message' => 'A competition with the same competition ID and category already exists.'
+            ], 422);
             }
+
+            // Proceed with update
+            $compcateg = Compcateg::findOrFail($CocaId);
+            $compcateg->update([
+            'category' => $validated['categid'],
+            'competition' => $validated['comp_id'],
+            'min_entry' => $validated['min_entry'],
+            'max_entry' => $validated['max_entry'],
+            ]);
     
-            // Create a new compcateg entry with the updated category
-            $newCompcateg = new Compcateg();
-            $newCompcateg->competition = $competitionId;
-            $newCompcateg->category = $validated['categid'];  
-            $newCompcateg->min_entry = $validated['min_entry'];
-            $newCompcateg->max_entry = $validated['max_entry'];
-            $newCompcateg->save();
-    
-            // Commit the transaction
             DB::commit();
     
             return response()->json(['message' => 'Competition updated successfully'], 200);
         } catch (\Exception $e) {
-            // Rollback the transaction if something goes wrong
             DB::rollBack();
-    
-            // Log any errors
-            Log::error('Error updating competition: ' . $e->getMessage(), [
-                'competitionId' => $competitionId,
-                'categoryId' => $categoryId
-            ]);
-    
-            return response()->json(['message' => 'An error occurred while updating the competition.'], 500);
+            return response()->json(['message' => 'An error occurred while updating the competition.', 'error' => $e->getMessage()], 500);
         }
     }
+    
 
 
-public function destroy($competitionId, $categoryId)
-{
-    Log::info("Delete request received for Competition: $competitionId, Category: $categoryId");
-
-    try {
-        DB::beginTransaction();
-
-        // Delete related compcateg entry
-        $deletedRows = DB::table('compcategs')->where([
-            ['competition', $competitionId],
-            ['category', $categoryId]
-        ])->delete();
-
-        if ($deletedRows === 0) {
-            Log::warning("No compcateg entry found for Competition: $competitionId, Category: $categoryId");
+    public function destroy($CocaId)
+    {
+        Log::info("Delete request received for Compcateg ID: $CocaId");
+    
+        try {
+            DB::beginTransaction();
+    
+            // Find the compcateg entry
+            $compcateg = Compcateg::findOrFail($CocaId);
+            $competitionId = $compcateg->competition;
+    
+            // Delete the compcateg
+            $compcateg->delete();
+            Log::info("Deleted compcateg ID: $CocaId");
+    
+            // Check if any categories remain for this competition
+            $remaining = Compcateg::where('competition', $competitionId)->count();
+    
+            if ($remaining === 0) {
+                // Delete the competition itself
+                Competition::where('comp_id', $competitionId)->delete();
+                Log::info("Deleted competition ID: $competitionId as it had no remaining categories.");
+            }
+    
+            DB::commit();
+            return response()->json(['message' => 'Competition and category entry deleted successfully'], 200);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error deleting competition/category: " . $e->getMessage());
+            return response()->json([
+                'error' => 'Deletion failed',
+                'details' => $e->getMessage()
+            ], 500);
         }
-
-        // Check if any categories remain
-        $remainingCategories = DB::table('compcategs')->where('competition', $competitionId)->count();
-
-        if ($remainingCategories === 0) {
-            DB::table('competitions')->where('comp_id', $competitionId)->delete();
-            Log::info("Deleted competition $competitionId as it had no remaining categories.");
-        }
-
-        DB::commit();
-        return response()->json(['message' => 'Competition deleted successfully']);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error("Error deleting competition: " . $e->getMessage());
-        return response()->json(['error' => $e->getMessage()], 500);
     }
-}
+    
 
     public function legtobbetSzervezo()
     {

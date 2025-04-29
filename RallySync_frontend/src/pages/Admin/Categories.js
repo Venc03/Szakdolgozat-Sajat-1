@@ -12,7 +12,7 @@
         const [error, setError] = useState("");
 
         useEffect(() => {
-            getKategoriak(); // Only fetching categories
+            getKategoriak();
         }, [getKategoriak]);
 
         const handleAdd = async () => {
@@ -21,15 +21,15 @@
                 return;
             }
 
-            const newCategory = { category: categoryName.trim() }; // Create a new category object
+            const newCategory = { category: categoryName.trim() };
             setLoadingAdd(true);
             setError("");
 
             try {
                 await getCsrfToken();
-                await myAxios.post('/api/categCreate', newCategory); // Creating the new category
-                setCategoryName(""); // Reset input after adding category
-                getKategoriak(); // Refetch the categories
+                await myAxios.post('/api/categCreate', newCategory); 
+                setCategoryName(""); 
+                getKategoriak(); 
             } catch (error) {
                 console.error("Error adding the category:", error);
                 setError(error.response?.data?.message || "There was an error adding the category.");
@@ -45,8 +45,8 @@
 
                 try {
                     await getCsrfToken();
-                    await myAxios.delete(`/api/categDelete/${id}`); // Deleting the category
-                    getKategoriak(); // Refetch the categories
+                    await myAxios.delete(`/api/categDelete/${id}`); 
+                    getKategoriak(); 
                 } catch (error) {
                     console.error("Error deleting the category:", error);
                     setError("There was an error deleting the category.");
@@ -68,8 +68,8 @@
 
             try {
                 await getCsrfToken();
-                await myAxios.patch(`/api/categModify/${id}`, { category: newName.trim() }); // Modifying the category
-                getKategoriak(); // Refetch the categories
+                await myAxios.patch(`/api/categModify/${id}`, { category: newName.trim() });
+                getKategoriak();
                 console.log(newName);
             } catch (error) {
                 console.error("Error modifying the category:", error);
@@ -87,8 +87,8 @@
                         <FormControl
                             placeholder="New Category Name"
                             aria-label="New Category Name"
-                            value={categoryName} // Bind to categoryName state
-                            onChange={(e) => setCategoryName(e.target.value)} // Update categoryName on change
+                            value={categoryName}
+                            onChange={(e) => setCategoryName(e.target.value)} 
                         />
                     </InputGroup>
                     <Button variant="warning" onClick={handleAdd} disabled={loadingAdd}>
@@ -110,14 +110,14 @@
                     <div className="card-body d-flex justify-content-between">
                         <Button
                             variant="primary"
-                            onClick={() => handleModify(category.categ_id, category.category)} // Modify category using categ_id
+                            onClick={() => handleModify(category.categ_id, category.category)} 
                             disabled={loadingModify[category.categ_id]}
                         >
                             {loadingModify[category.categ_id] ? <Spinner animation="border" size="sm" /> : "Módosítás"}
                         </Button>
                         <Button
                             variant="danger"
-                            onClick={() => handleDelete(category.categ_id)} // Delete category using categ_id
+                            onClick={() => handleDelete(category.categ_id)}
                             disabled={loadingDelete[category.categ_id]}
                         >
                             {loadingDelete[category.categ_id] ? <Spinner animation="border" size="sm" /> : "Törlés"}

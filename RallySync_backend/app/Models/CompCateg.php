@@ -11,9 +11,11 @@ class Compcateg extends Model
 
     public $incrementing = false;
 
-    protected $primaryKey = ['competition', 'category'];
+    protected $primaryKey = 'coca_id';
 
     protected $fillable = [
+        'competition',
+        'category',
         'min_entry',
         'max_entry'
     ];
